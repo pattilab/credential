@@ -1,0 +1,10 @@
+Package: credential
+Type: Package
+Title: Identify biological features in metabolomic data.
+Version: 1.0
+Date: 2014-08-15
+Author: Nathaniel Mahieu
+Maintainer: Nathaniel Mahieu <nathaniel.mahieu@wustl.edu>
+Description: Searches for pairs of U12C/U13C labeled peaks in metabolomic data.  Compatible with any chromatography coupled to an accurate-mass mass analyzer.
+License: 
+Depends: xcms, data.table, CAMERA
