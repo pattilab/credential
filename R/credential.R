@@ -172,29 +172,21 @@ xsAlign = function(
   xs
   ) { #TODO: Fix up grouping
   
-  xs = group(xs)
+  xs = group(xs, method="density", bw = 10, minsamp=1, mzwid=.01)
+  xs = retcor(xs, method="obiwarp", center = 1)
+  xs = group(xs, method="density", bw = 5, minsamp=1, mzwid=.01)
   cat("\n")
   
-  peaks = as.data.frame(xs@peaks)
-  
-  pairs_list = lapply(xs@groupidx, function(x){
-    if(length(x) < 2) { return() }
+  npeaks = sum(xs@peaks[,"sample"]==1)
+  hum = ldply(xs@groupidx, .progress="text", function(x) {
+    peaks_from_1 = x <= npeaks
     
-    grp_ps = peaks[x,,drop=F]
-    as = grp_ps[which(grp_ps[,"sample"] == 1),,drop=F]
-    bs = grp_ps[which(grp_ps[,"sample"] == 2),,drop=F]
-    if (nrow(as) < 1 || nrow(bs) < 1) { return() }
+    if(!any(peaks_from_1) || !any(!peaks_from_1)) { return(NULL) }
     
-    tmp = lapply(1:nrow(as), function(i) {
-      pna = as[,"peaknum"][i]
-      tmp = lapply(1:nrow(bs), function(j) {
-        cbind(peaknum_a = pna, peaknum_b = bs[,"peaknum"][j])
-        })
-      do.call("rbind", tmp, quote=T)
-      })
-    do.call("rbind", tmp, quote=T)
+    ldply(which(peaks_from_1), function(y) {
+      cbind(peaknum_a = x[y], peaknum_b = x[!peaks_from_1] - npeaks)
+    })
   })
-    hum = do.call("rbind", pairs_list, quote=T)
   
   cat("\nUnique peaknum_a aligns: ", length(unique(hum[,"peaknum_a"])), ". Total aligns: ", nrow(hum))
   return(hum)
