@@ -409,7 +409,7 @@ addIsoAdd = function(
 removeDuplicatePeakPicks = function(
   mf_p
   ) {
-  matrixLapplyUniqueRows(mf_p, "master_peaknum_a", function(peaks) {
+  ddply(as.data.frame(mf_p), "master_peaknum_a", function(peaks) {
     
     if(length(unique(peaks[,"p_carbons_a"])) == 1 & length(unique(peaks[,"p_charge_a"])) == 1) {
       return(peaks[1,,drop=F])
@@ -423,7 +423,7 @@ removeDuplicatePeakPicks = function(
 filterChargeSupport = function(
   mf_pd
   ) {
-    matrixLapplyUniqueRows(mf_pd, "master_peaknum_a", function(peaks) {
+    ddply(as.data.frame(mf_pd), "master_peaknum_a", .progress="text", function(peaks) {
     
       if(nrow(peaks) <= 1) {return(peaks)}
       
@@ -462,7 +462,7 @@ filterChargeSupport = function(
 }
 
 filterPeakSupport = function(mf_pd) {
-  matrixLapplyUniqueRows(mf_pd, "master_peaknum_a", function(peaks) {
+  ddply(as.data.frame(mf_pd), "master_peaknum_a", .progress="text", function(peaks) {
     
     votes = peaks[,"supporting_peaks_a"] + peaks[,"supporting_peaks_b"]
     
@@ -475,7 +475,7 @@ which.max.nm = function(x) {
 }
 
 cNumMatters = function(mf_pd) {
-  matrixLapplyUniqueRows(mf_pd, "master_peaknum_a", function(peaks) {
+  ddply(as.data.frame(mf_pd), "master_peaknum_a", .progress="text", function(peaks) {
     
     if(nrow(peaks) <= 1) { return(peaks) }
     if (length(unique(peaks[,"p_carbons_a"])) == 1) { return(peaks[1,,drop=F]) }
@@ -501,7 +501,7 @@ selectBest = function(
 
 
 heaviestMatters = function(m) {
-  matrixLapplyUniqueRows(m, "master_peaknum_a", function(peaks) {
+  ddply(as.data.frame(m), "master_peaknum_a", .progress="text", function(peaks) {
     peaks[peaks[,"p_carbons_a"] == max(peaks[,"p_carbons_a"]),,drop=F]
   })
 }

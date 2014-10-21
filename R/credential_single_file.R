@@ -57,7 +57,7 @@ credential.one = function(
 filterChargeSupport.one = function(
   mf_pd
 ) {
-  matrixLapplyUniqueRows(mf_pd, "master_peaknum", function(peaks) {
+  ddply(as.data.frame(mf_pd), "master_peaknum", function(peaks) {
     
     if(nrow(peaks) <= 1) {return(peaks)}
     
@@ -141,7 +141,7 @@ filterIsos.one = function(
 removeDuplicatePeakPicks.one = function(
   mf_p
 ) {
-  matrixLapplyUniqueRows(mf_p, "master_peaknum", function(peaks) {
+  ddply(as.data.frame(mf_p), "master_peaknum", function(peaks) {
     
     if(length(unique(peaks[,"p_carbons"])) == 1 & length(unique(peaks[,"p_charge"])) == 1) {
       return(peaks[1,,drop=F])
@@ -152,7 +152,7 @@ removeDuplicatePeakPicks.one = function(
   })
 }
 filterPeakSupport.one = function(mf_pd) {
-  matrixLapplyUniqueRows(mf_pd, "master_peaknum", function(peaks) {
+  ddply(mf_pd, "master_peaknum", function(peaks) {
     
     votes = peaks[,"supporting_peaks"] + peaks[,"supporting_peaks"]
     
@@ -160,7 +160,7 @@ filterPeakSupport.one = function(mf_pd) {
   })
 }
 heaviestMatters.one = function(m) {
-  matrixLapplyUniqueRows(m, "master_peaknum", function(peaks) {
+  ddply(as.data.frame(m), "master_peaknum", function(peaks) {
     peaks[peaks[,"p_carbons"] == max(peaks[,"p_carbons"]),,drop=F]
   })
 }
