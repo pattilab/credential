@@ -173,8 +173,8 @@ xsAlign = function(
   ) { #TODO: Fix up grouping
   
   xs = group(xs, method="density", bw = 10, minsamp=1, mzwid=.01)
-  xs = retcor(xs, method="obiwarp", center = 1)
-  xs = group(xs, method="density", bw = 5, minsamp=1, mzwid=.01)
+  #xs = retcor(xs, method="obiwarp", center = 1)
+  #xs = group(xs, method="density", bw = 5, minsamp=1, mzwid=.01)
   cat("\n")
   
   npeaks = sum(xs@peaks[,"sample"]==1)
@@ -184,7 +184,7 @@ xsAlign = function(
     if(!any(peaks_from_1) || !any(!peaks_from_1)) { return(NULL) }
     
     ldply(which(peaks_from_1), function(y) {
-      cbind(peaknum_a = x[y], peaknum_b = x[!peaks_from_1] - npeaks)
+      cbind(peaknum_a = xs@peaks[x[y],"peaknum"], peaknum_b = xs@peaks[x[!peaks_from_1],"peaknum"])
     })
   })
   
@@ -204,8 +204,8 @@ matchAlignsCarbonCharge = function(
     
     ma = pwma[[as.character(x[,"peaknum_a"])]]
     mb = pwmb[[as.character(x[,"peaknum_b"])]]
-    
-    tmp = lapply(1:nrow(ma), function(j) {
+        
+    tmp = lapply(seq_along(ma[,1]), function(j) {
       y = ma[j,,drop=F]
       
       possible_validation = 
