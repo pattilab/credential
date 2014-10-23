@@ -173,8 +173,8 @@ xsAlign = function(
   ) { #TODO: Fix up grouping
   
   xs = group(xs, method="density", bw = 10, minsamp=1, mzwid=.01)
-  #xs = retcor(xs, method="obiwarp", center = 1)
-  #xs = group(xs, method="density", bw = 5, minsamp=1, mzwid=.01)
+  xs = retcor(xs, method="obiwarp", center = 1)
+  xs = group(xs, method="density", bw = 5, minsamp=1, mzwid=.01)
   cat("\n")
   
   npeaks = sum(xs@peaks[,"sample"]==1)
