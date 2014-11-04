@@ -134,6 +134,7 @@ credential = function(
   
   if (write_files) {
     write.csv(cfs, "credentialed_features.csv", row.names=F)
+    write.csv(mf, "raw_credentialed_features", row.names=F)
     writeLines(csum, "credential_summary.txt")
     write.csv(bcfs, "credentialed_features_bad.csv", row.names=F)
   }

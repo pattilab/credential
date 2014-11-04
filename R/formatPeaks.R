@@ -17,7 +17,7 @@ formatPeaks = function(
     
     cbind(
       peaknum_a = peak_a[,"peaknum"],
-      peaknum_b = match_a[,"peaknum"],
+      peaknum_a13 = match_a[,"peaknum"],
       mz= peak_a[,"mz"], 
       rt= peak_a[,"rt"], 
       rtmin= peak_a[,"rtmin"], 
