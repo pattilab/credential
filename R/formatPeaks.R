@@ -16,7 +16,8 @@ formatPeaks = function(
     ciso = peak[,"ciso_a"]; if (is.na(ciso)) { crule = peak[,"ciso_b"] }
     
     cbind(
-      peaknum_a = peak_a[,"peaknum"], 
+      peaknum_a = peak_a[,"peaknum"],
+      peaknum_b = match_a[,"peaknum"],
       mz= peak_a[,"mz"], 
       rt= peak_a[,"rt"], 
       rtmin= peak_a[,"rtmin"], 

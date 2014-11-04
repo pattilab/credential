@@ -133,9 +133,9 @@ credential = function(
   csum = c(csum,  paste(sep=" ","Bad credentialed features (credentialed_features_bad.csv): ", nrow(bcfs)))
   
   if (write_files) {
-    write.csv(cfs, "credentialed_features.csv")
+    write.csv(cfs, "credentialed_features.csv", row.names=F)
     writeLines(csum, "credential_summary.txt")
-    write.csv(bcfs, "credentialed_features_bad.csv")
+    write.csv(bcfs, "credentialed_features_bad.csv", row.names=F)
   }
   
   return(cfs)
