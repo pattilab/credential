@@ -12,9 +12,8 @@ formatPeaks = function(
     match_a = ps[which(ps[,"peaknum"] == peak[,"peaknum_a"]),,drop=F]
     
     crule = peak[,"crule_a"]; if (is.na(crule)) { crule = peak[,"crule_b"] }
-    ciso = peak[,"ciso_a"]; if (is.na(ciso)) { crule = peak[,"ciso_b"] }
-    ciso = peak[,"ciso_a"]; if (is.na(ciso)) { crule = peak[,"ciso_b"] }
-    
+    ciso = peak[,"ciso_a"]; if (is.na(ciso)) { ciso = peak[,"ciso_b"] }
+
     cbind(
       peaknum_a = peak_a[,"peaknum"],
       peaknum_a13 = match_a[,"peaknum"],
