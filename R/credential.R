@@ -370,28 +370,21 @@ addIsoAdd = function(
   colnames(bs2) = c("ciso_b", "ccharge_b")
   
   
-  adas = lapply(1:nrow(mf_s), function(i) {
-    peak = mf_s[i,,drop=F]
-    
-    isos = an_a@derivativeIons[[peak[,"master_peaknum_a"]]]
-    if (is.null(isos)) { return(c(NA, NA)) }
-    
-    return(c(isos$rule_id, isos$charge))
+  adas = aaply(mf_s, function(peak) { #Discards all but the first possible derivative ion
+    ads = an_a@derivativeIons[[1]][[peak["master_peaknum_a"]]]
+    if (is.null(ads)) { c(NA, NA) }
+    else { c(ads$rule_id, ads$charge) }
   })
-  adas2 = do.call("rbind", as)
-  colnames(adas2) = c("crule_a", "cacharge_a")
+  colnames(adas) = c("crule_a", "cacharge_a")
   
   
-  adbs = lapply(1:nrow(mf_s), function(i) {
-    peak = mf_s[i,,drop=F]
+  adbs = aaply(mf_s, function(peak) {
+    ads = an_b@derivativeIons[[1]][[peak["master_peaknum_b"]]]
+    if (is.null(ads)) { return(c(NA, NA)) }
     
-    isos = an_b@derivativeIons[[peak[,"master_peaknum_b"]]]
-    if (is.null(isos)) { return(c(NA, NA)) }
-    
-    return(c(isos$rule_id, isos$charge))
+    return(c(ads$rule_id, ads$charge))
   })
-  adbs2 = do.call("rbind", bs)
-  colnames(adbs2) = c("crule_b", "cacharge_b")
+  colnames(adbs) = c("crule_b", "cacharge_b")
   
   #Add PS info
   pspecs = lapply(1:length(an_a@pspectra), function(i) {
@@ -403,7 +396,7 @@ addIsoAdd = function(
     pspecs[which(pspecs[,"peaknum"] == peak[,"peaknum_a"]), "psg"][1]
   })
   
-  cbind(mf_s, as2, bs2, adas2, adbs2, pspec = pspecs2)
+  cbind(mf_s, as2, bs2, adas, adbs, pspec = pspecs2)
 }
 
 removeDuplicatePeakPicks = function(
