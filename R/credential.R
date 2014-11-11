@@ -344,59 +344,43 @@ addIsoAdd = function(
   mf_s, 
   an_a,
   an_b
-  ) { #TODO: Incoporate earlier in workflow
+) { #TODO: Incoporate earlier in workflow
   #add_iso_info
-  as = lapply(1:nrow(mf_s), function(i) {
-    peak = mf_s[i,,drop=F]
+  
+  iso_add = aaply(mf_s, 1, function(peak) {
     
-    isos = an_a@isotopes[[peak[,"master_peaknum_a"]]]
-    if (is.null(isos)) { return(c(NA, NA)) }
+    iso_a = an_a@isotopes[[peak["master_peaknum_a"]]]
+    if (is.null(iso_a)) { isos_a = c(NA, NA) }
+    else { isos_a = c(iso_a$iso, iso_a$charge) }
     
-    return(c(isos$iso, isos$charge))
+    ad_a = an_a@derivativeIons[[(peak["master_peaknum_a"])]]
+    if (is.null(ad_a)) { ads_a = c(NA, NA) }
+    else { ads_a = c(ad_a[[1]]$rule_id, ad_a[[1]]$charge) }
+    
+    iso_b = an_b@isotopes[[peak["master_peaknum_b"]]]
+    if (is.null(iso_b)) { isos_b = c(NA, NA) }
+    else { isos_b = c(iso_b$iso, iso_b$charge) }
+    
+    ad_b = an_b@derivativeIons[[(peak["master_peaknum_b"])]]
+    if (is.null(ad_b)) { ads_b = c(NA, NA) }
+    else { ads_b = c(ad_b[[1]]$rule_id, ad_b[[1]]$charge) }
+    
+    c(isos_a, ads_a, isos_b, ads_b)
   })
-  as2 = do.call("rbind", as)
-  colnames(as2) = c("ciso_a", "ccharge_a")
-  
-  
-  bs = lapply(1:nrow(mf_s), function(i) {
-    peak = mf_s[i,,drop=F]
-    
-    isos = an_b@isotopes[[peak[,"master_peaknum_b"]]]
-    if (is.null(isos)) { return(c(NA, NA)) }
-    
-    return(c(isos$iso, isos$charge))
-  })
-  bs2 = do.call("rbind", bs)
-  colnames(bs2) = c("ciso_b", "ccharge_b")
-  
-  
-  adas = aaply(mf_s, function(peak) { #Discards all but the first possible derivative ion
-    ads = an_a@derivativeIons[[1]][[peak["master_peaknum_a"]]]
-    if (is.null(ads)) { c(NA, NA) }
-    else { c(ads$rule_id, ads$charge) }
-  })
-  colnames(adas) = c("crule_a", "cacharge_a")
-  
-  
-  adbs = aaply(mf_s, function(peak) {
-    ads = an_b@derivativeIons[[1]][[peak["master_peaknum_b"]]]
-    if (is.null(ads)) { return(c(NA, NA)) }
-    
-    return(c(ads$rule_id, ads$charge))
-  })
-  colnames(adbs) = c("crule_b", "cacharge_b")
+  colnames(iso_add) = c("ciso_a", "ccharge_a", "crule_a", "cacharge_a", "ciso_b", "ccharge_b", "crule_b", "cacharge_b")
   
   #Add PS info
   pspecs = lapply(1:length(an_a@pspectra), function(i) {
     cbind(peaknum = rep(i, length(an_a@pspectra[[i]])), psg = an_a@pspectra[[i]])
   })
   pspecs = do.call("rbind", pspecs)
+  
   pspecs2 = sapply(1:nrow(mf_s), function(x) {
     peak = mf_s[x,,drop=F]
     pspecs[which(pspecs[,"peaknum"] == peak[,"peaknum_a"]), "psg"][1]
   })
   
-  cbind(mf_s, as2, bs2, adas, adbs, pspec = pspecs2)
+  cbind(mf_s, iso_add, pspec = pspecs2)
 }
 
 removeDuplicatePeakPicks = function(
@@ -415,43 +399,50 @@ removeDuplicatePeakPicks = function(
 
 filterChargeSupport = function(
   mf_pd
-  ) {
-    ddply(as.data.frame(mf_pd), "master_peaknum_a", .progress="text", function(peaks) {
+) {
+  ddply(as.data.frame(mf_pd), "master_peaknum_a", .progress="text", function(peaks) {
     
-      if(nrow(peaks) <= 1) {return(peaks)}
-      
-      charge_supporta = sapply(1:max(peaks[,"p_charge_a"]), function(x) {
-        sum(peaks[x==peaks[,"p_charge_a"],"charge_support_a"] == 1)
-      })
-      charge_supportb = sapply(1:max(peaks[,"p_charge_a"]), function(x) {
-        sum(peaks[x==peaks[,"p_charge_a"],"charge_support_b"] == 1)
-      })
-      
-      camera_votes=list(0,0,0,0,0,0,0,1)
-      for (y in c("ccharge_a","ccharge_b", "cacharge_a", "cacharge_b")) {
-        if (y %in% colnames(peaks)) { if(!is.na(peaks[1,y])) { camera_votes[[peaks[1,y]]] = camera_votes[[peaks[1,y]]]  + 1}
-      } }
-      if (max(charge_supporta) != 0) { 
-        for (z in which(max(charge_supporta) == charge_supporta)) {
-          camera_votes[[z]] = camera_votes[[z]]  + 1
-        }
-      }
-      if (max(charge_supportb) != 0) {
-        for (z in which(max(charge_supportb) == charge_supportb)) {
-          camera_votes[[z]] = camera_votes[[z]]  + 1
-        }
-      }
-                 
-      camera_consensus = which(max(unlist(camera_votes)) == unlist(camera_votes))           
-                 
-      if (length(camera_consensus) > 1 || camera_consensus != 8) {
-        the_peaks = which(peaks[,"p_charge_a"] %in% camera_consensus)
-      } else {
-        the_peaks = complete.cases(peaks[,"p_charge_a"])
-      }
+    if(nrow(peaks) <= 1) {return(peaks)}
     
-      return(peaks[the_peaks,,drop=F])
+    charge_supporta = sapply(1:max(peaks[,"p_charge_a"]), function(x) {
+      sum(peaks[x==peaks[,"p_charge_a"],"charge_support_a"] == 1)
     })
+    charge_supportb = sapply(1:max(peaks[,"p_charge_a"]), function(x) {
+      sum(peaks[x==peaks[,"p_charge_a"],"charge_support_b"] == 1)
+    })
+    eep <<- peaks
+    camera_votes=lapply(1:100, function(x){0})
+    camera_votes[101] = 1
+    for (y in c("ccharge_a","ccharge_b", "cacharge_a", "cacharge_b")) {
+      if (y %in% colnames(peaks)) { 
+        if(!is.na(peaks[1,y])) { 
+          if (peaks[1,y] != 0) {
+            camera_votes[[abs(peaks[1,y])]] = camera_votes[[abs(peaks[1,y])]]  + 1
+          }
+        }
+      } 
+    }
+    if (max(charge_supporta) != 0) { 
+      for (z in which(max(charge_supporta) == charge_supporta)) {
+        camera_votes[[z]] = camera_votes[[z]]  + 1
+      }
+    }
+    if (max(charge_supportb) != 0) {
+      for (z in which(max(charge_supportb) == charge_supportb)) {
+        camera_votes[[z]] = camera_votes[[z]]  + 1
+      }
+    }
+    
+    camera_consensus = which(max(unlist(camera_votes)) == unlist(camera_votes))           
+    
+    if (length(camera_consensus) > 1 || camera_consensus != 101) {
+      the_peaks = which(abs(peaks[,"p_charge_a"]) %in% camera_consensus)
+    } else {
+      the_peaks = complete.cases(peaks[,"p_charge_a"])
+    }
+    
+    return(peaks[the_peaks,,drop=F])
+  })
 }
 
 filterPeakSupport = function(mf_pd) {
