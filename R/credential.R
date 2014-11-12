@@ -347,26 +347,26 @@ addIsoAdd = function(
 ) { #TODO: Incoporate earlier in workflow
   #add_iso_info
   
-  iso_add = aaply(mf_s, 1, function(peak) {
-    
+  iso_add = alply(mf_s, 1, function(peak) {
     iso_a = an_a@isotopes[[peak["master_peaknum_a"]]]
-    if (is.null(iso_a)) { isos_a = c(NA, NA) }
-    else { isos_a = c(iso_a$iso, iso_a$charge) }
+    if (is.null(iso_a)) { isos_a = c(NA, NA)
+      } else { isos_a = c(iso_a$iso, iso_a$charge) }
     
     ad_a = an_a@derivativeIons[[(peak["master_peaknum_a"])]]
-    if (is.null(ad_a)) { ads_a = c(NA, NA) }
-    else { ads_a = c(ad_a[[1]]$rule_id, ad_a[[1]]$charge) }
+    if (is.null(ad_a)) { ads_a = c(NA, NA) 
+      } else { ads_a = c(ad_a[[1]]$rule_id, ad_a[[1]]$charge) }
     
     iso_b = an_b@isotopes[[peak["master_peaknum_b"]]]
-    if (is.null(iso_b)) { isos_b = c(NA, NA) }
-    else { isos_b = c(iso_b$iso, iso_b$charge) }
+    if (is.null(iso_b)) { isos_b = c(NA, NA) 
+      } else { isos_b = c(iso_b$iso, iso_b$charge) }
     
     ad_b = an_b@derivativeIons[[(peak["master_peaknum_b"])]]
-    if (is.null(ad_b)) { ads_b = c(NA, NA) }
-    else { ads_b = c(ad_b[[1]]$rule_id, ad_b[[1]]$charge) }
+    if (is.null(ad_b)) { ads_b = c(NA, NA) 
+      } else { ads_b = c(ad_b[[1]]$rule_id, ad_b[[1]]$charge) }
     
-    c(isos_a, ads_a, isos_b, ads_b)
+    return(c(isos_a, ads_a, isos_b, ads_b))
   })
+  iso_add = do.call("rbind", iso_add)
   colnames(iso_add) = c("ciso_a", "ccharge_a", "crule_a", "cacharge_a", "ciso_b", "ccharge_b", "crule_b", "cacharge_b")
   
   #Add PS info
@@ -401,8 +401,7 @@ filterChargeSupport = function(
   mf_pd
 ) {
   ddply(as.data.frame(mf_pd), "master_peaknum_a", .progress="text", function(peaks) {
-    
-    if(nrow(peaks) <= 1) {return(peaks)}
+    if (nrow(peaks) <= 1) { return(peaks) }
     
     charge_supporta = sapply(1:max(peaks[,"p_charge_a"]), function(x) {
       sum(peaks[x==peaks[,"p_charge_a"],"charge_support_a"] == 1)
