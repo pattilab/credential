@@ -79,9 +79,11 @@ credential = function(
   # Adds from xsAnnotate: ciso_a, ciso_b, ccharge_a, ccharge_b, cacharge_a, cacharge_b, crule_a, crule_b
   m_i = addIsoAdd(matches, an_a, an_b) 
   
-  m_ic = filterChargeSupport(m_i)
+  m_i2 = filterMpc(m_i, mpc_f)
+  
+  m_ic = filterChargeSupport(m_i2)
   csum = c(csum,  paste(sep=" ","After filtering based on charge support. Unique peaknum_a aligns: ", length(unique(m_ic[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_ic)))
-           
+  
   m_icm = filterMaxo(
     m_ic, 
     peaks_a,

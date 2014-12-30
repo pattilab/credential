@@ -82,6 +82,20 @@ pwms = function(
   pairwise_matches
 }
 
+filterMpc = function(pwmsx, mpc_f) {
+  
+  mpclist = aaply(pwmsx, 1, function(x) {
+    c(
+      min_mpc=mpc[x["p_carbons_a"],"min_mpc"]/mpc_f,
+      max_mpc=mpc[x["p_carbons_a"],"max_mpc"]*mpc_f
+      )
+    })
+  
+  pwmsx[
+    pwmsx[,"p_mpc_a"] < mpclist[,"max_mpc"] & pwmsx[,"p_mpc_a"] > mpclist[,"min_mpc"]
+    ,,drop=F]
+}
+
 #Looks for credentialed features which are a series of 1 carbon spacings.  This indicates natural abundance isotopes and the more isotopes found the more likely we have identified the correct charge state.
 buildChargeSupport = function(
   pwmsx
