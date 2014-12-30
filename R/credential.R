@@ -25,7 +25,7 @@ mPeaks = function(
     
     cs = abs(peaks[,"p_carbons"])
     cs[cs==0] = 1
-    maxmpc = mpc[cs, "max_mpc"]
+    maxmpc = mpc[cs, "max_mpc"]*2
     minmpc = mpc[cs, "min_mpc"]
     maxmpc[is.na(maxmpc)] = mpc[nrow(mpc),"max_mpc"]
     minmpc[is.na(minmpc)] = mpc[nrow(mpc),"min_mpc"]
