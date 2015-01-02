@@ -20,6 +20,18 @@ credential = function(
   
   csum=c()
   
+  csum = c(csum, paste(sep = " - ", collapse="\n",
+                       c("r_12t13_a", r_12t13_a),
+                       c("r_12t13_b", r_12t13_b),
+                       c("isotope_rt_delta_s", isotope_rt_delta_s),
+                       c("ppm_for_isotopes", ppm_for_isotopes),
+                       c("mixed_ratio_factor", mixed_ratio_factor),
+                       c("mixed_ratio_ratio_factor", mixed_ratio_ratio_factor),
+                       c("xs_a_file", xs_a_file),
+                       c("xs_b_file", xs_b_file),
+                       c("mpc_f", mpc_f)
+  ))
+  
   if (!is.null(xs_a_file)) {xs_a@filepaths = xs_a_file  }
   if (!is.null(xs_b_file)) {xs_b@filepaths = xs_b_file  }
   
