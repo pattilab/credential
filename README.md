@@ -34,7 +34,7 @@ http://pubs.acs.org/doi/abs/10.1021/ac503092d
   
       isotope_rt_delta_s = 5,
       ppm_for_isotopes = 5,
-			ppm_for_isotopes_function=NULL,
+      ppm_for_isotopes_function=NULL,
   
   
       mixed_ratio_factor = 4,
@@ -47,8 +47,9 @@ http://pubs.acs.org/doi/abs/10.1021/ac503092d
 ##Modifications Since Publication
  - The default, maximum mass-per-carbon limit was increased to accomidate heavier adducts such as Mg2+.  Previously these adducts could be improperly excluded if they increased the detected mass per carbon of a ner-limit compound.
  - The ppm error is now specifiable in a mass-dependent manner.  This allows the filtering to account for decreases in resolution at higher mass and the associated mass error introduced due to multiple peaks contributing to a single centroid mass.  For example the following function could be passed to ppm_for_isotopes_function:
+    
 		ppm_f = function(masses) {
-			resolution = (2E6 * masses ^ -0.49) # Emperically determined mass dependence of resolution
-			fwhm = masses / resolution
-			ppm_plusminus = fwhm / 2 / masses * 1E6 + 0.3
-			}
+    resolution = (2E6 * masses ^ -0.49) # Emperically determined mass dependence of resolution
+    fwhm = masses / resolution
+    ppm_plusminus = fwhm / 2 / masses * 1E6 + 0.3
+    }
