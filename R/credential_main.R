@@ -9,6 +9,7 @@ credential = function(
   
   isotope_rt_delta_s = 5,
   ppm_for_isotopes = 4,
+  ppm_for_isotopes_formula = NULL, # f(); Takes a mass and returns a +/- ppm (2*ppm would be the window). Must be vectorized
   
   mixed_ratio_factor = 4,
   mixed_ratio_ratio_factor = 1.8,
@@ -46,6 +47,7 @@ credential = function(
   pwms_a = pwms(peaks_a, 
                 isotope_rt_delta_s = isotope_rt_delta_s, 
                 ppm_for_isotopes = ppm_for_isotopes,
+                ppm_for_isotopes_formula = ppm_for_isotopes_formula,
                 mpc = mpc,
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_a,
@@ -57,6 +59,7 @@ credential = function(
   pwms_b = pwms(peaks_b, 
                 isotope_rt_delta_s =isotope_rt_delta_s, 
                 ppm_for_isotopes =ppm_for_isotopes,
+                ppm_for_isotopes_formula = ppm_for_isotopes_formula,
                 mpc = mpc,
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_b,

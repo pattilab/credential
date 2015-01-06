@@ -2,6 +2,7 @@ mPeaks = function(
   peak, 
   peaks, 
   ppm_for_isotopes,
+  ppm_for_isotopes_formula,
   isotope_rt_delta_s,
   mpc,
   mpc_f,
@@ -30,10 +31,16 @@ mPeaks = function(
     maxmpc[is.na(maxmpc)] = mpc[nrow(mpc),"max_mpc"]
     minmpc[is.na(minmpc)] = mpc[nrow(mpc),"min_mpc"]
     
+    if (!is.null(ppm_for_isotopes_formula)) {
+      ppm_mz = ppm_for_isotopes_formula(peaks[,"mz"])
+    } else {
+      ppm_mz = ppm_for_isotopes
+    }
+    
     x = complete.cases(peaks[,"mz"]) & #No filtering - all match
       #peaks$p_rt_diff < isotope_rt_delta_s & #Exclude all peaks which do not elute within x seconds
       #peaks$mz > peak$mz & #Implied
-      peaks[,"p_iso_ppm"] < ppm_for_isotopes & #Prospective isotope must be n*(C13-C12) m/z away
+      peaks[,"p_iso_ppm"] < ppm_mz & #Prospective isotope must be n*(C13-C12) m/z away
       peaks[,"p_mpc"] <= maxmpc * mpc_f &
       peaks[,"p_mpc"] >= minmpc / mpc_f &
       peaks[,"p_carbons"] > 0 &
@@ -51,6 +58,7 @@ pwms = function(
   peak_table,
   isotope_rt_delta_s, 
   ppm_for_isotopes,
+  ppm_for_isotopes_formula,
   mpc,
   mpc_f,
   mixed_ratio_12t13,
@@ -72,7 +80,7 @@ pwms = function(
                                                               coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
                                                               peaks = peak_table[coeluting, ,drop=F]
                                                               
-                                                              mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
+                                                              mPeaks(peak, peaks, ppm_for_isotopes, ppm_for_isotopes_formula, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
   })
   
   count = sum(sapply(pairwise_matches, function(x) { nrow(x) }), na.rm=T)
