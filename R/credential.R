@@ -2,6 +2,7 @@ mPeaks = function(
   peak, 
   peaks, 
   ppm_for_isotopes,
+  ppm_for_isotopes_formula,
   isotope_rt_delta_s,
   mpc,
   mpc_f,
@@ -25,15 +26,21 @@ mPeaks = function(
     
     cs = abs(peaks[,"p_carbons"])
     cs[cs==0] = 1
-    maxmpc = mpc[cs, "max_mpc"]
+    maxmpc = mpc[cs, "max_mpc"]*2
     minmpc = mpc[cs, "min_mpc"]
     maxmpc[is.na(maxmpc)] = mpc[nrow(mpc),"max_mpc"]
     minmpc[is.na(minmpc)] = mpc[nrow(mpc),"min_mpc"]
     
+    if (!is.null(ppm_for_isotopes_formula)) {
+      ppm_mz = ppm_for_isotopes_formula(peaks[,"mz"])
+    } else {
+      ppm_mz = ppm_for_isotopes
+    }
+    
     x = complete.cases(peaks[,"mz"]) & #No filtering - all match
       #peaks$p_rt_diff < isotope_rt_delta_s & #Exclude all peaks which do not elute within x seconds
       #peaks$mz > peak$mz & #Implied
-      peaks[,"p_iso_ppm"] < ppm_for_isotopes & #Prospective isotope must be n*(C13-C12) m/z away
+      peaks[,"p_iso_ppm"] < ppm_mz & #Prospective isotope must be n*(C13-C12) m/z away
       peaks[,"p_mpc"] <= maxmpc * mpc_f &
       peaks[,"p_mpc"] >= minmpc / mpc_f &
       peaks[,"p_carbons"] > 0 &
@@ -51,6 +58,7 @@ pwms = function(
   peak_table,
   isotope_rt_delta_s, 
   ppm_for_isotopes,
+  ppm_for_isotopes_formula,
   mpc,
   mpc_f,
   mixed_ratio_12t13,
@@ -72,7 +80,7 @@ pwms = function(
                                                               coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
                                                               peaks = peak_table[coeluting, ,drop=F]
                                                               
-                                                              mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
+                                                              mPeaks(peak, peaks, ppm_for_isotopes, ppm_for_isotopes_formula, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
   })
   
   count = sum(sapply(pairwise_matches, function(x) { nrow(x) }), na.rm=T)
@@ -80,6 +88,20 @@ pwms = function(
   cat("\nPeaks:",nrow(peak_table), "Pairwise matches: ",count)
   
   pairwise_matches
+}
+
+filterMpc = function(pwmsx, mpc_f) {
+  
+  mpclist = aaply(pwmsx, 1, function(x) {
+    c(
+      min_mpc=mpc[x["p_carbons_a"],"min_mpc"]/mpc_f,
+      max_mpc=mpc[x["p_carbons_a"],"max_mpc"]*mpc_f
+      )
+    })
+  
+  pwmsx[
+    pwmsx[,"p_mpc_a"] < mpclist[,"max_mpc"] & pwmsx[,"p_mpc_a"] > mpclist[,"min_mpc"]
+    ,,drop=F]
 }
 
 #Looks for credentialed features which are a series of 1 carbon spacings.  This indicates natural abundance isotopes and the more isotopes found the more likely we have identified the correct charge state.

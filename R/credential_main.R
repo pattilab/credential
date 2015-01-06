@@ -9,6 +9,7 @@ credential = function(
   
   isotope_rt_delta_s = 5,
   ppm_for_isotopes = 4,
+  ppm_for_isotopes_formula = NULL, # f(); Takes a mass and returns a +/- ppm (2*ppm would be the window). Must be vectorized
   
   mixed_ratio_factor = 4,
   mixed_ratio_ratio_factor = 1.8,
@@ -19,6 +20,18 @@ credential = function(
   ) {
   
   csum=c()
+  
+  csum = c(csum, paste(sep = " - ", collapse="\n",
+                       c("r_12t13_a", r_12t13_a),
+                       c("r_12t13_b", r_12t13_b),
+                       c("isotope_rt_delta_s", isotope_rt_delta_s),
+                       c("ppm_for_isotopes", ppm_for_isotopes),
+                       c("mixed_ratio_factor", mixed_ratio_factor),
+                       c("mixed_ratio_ratio_factor", mixed_ratio_ratio_factor),
+                       c("xs_a_file", xs_a_file),
+                       c("xs_b_file", xs_b_file),
+                       c("mpc_f", mpc_f)
+  ))
   
   if (!is.null(xs_a_file)) {xs_a@filepaths = xs_a_file  }
   if (!is.null(xs_b_file)) {xs_b@filepaths = xs_b_file  }
@@ -34,6 +47,7 @@ credential = function(
   pwms_a = pwms(peaks_a, 
                 isotope_rt_delta_s = isotope_rt_delta_s, 
                 ppm_for_isotopes = ppm_for_isotopes,
+                ppm_for_isotopes_formula = ppm_for_isotopes_formula,
                 mpc = mpc,
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_a,
@@ -45,6 +59,7 @@ credential = function(
   pwms_b = pwms(peaks_b, 
                 isotope_rt_delta_s =isotope_rt_delta_s, 
                 ppm_for_isotopes =ppm_for_isotopes,
+                ppm_for_isotopes_formula = ppm_for_isotopes_formula,
                 mpc = mpc,
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_b,
@@ -79,9 +94,11 @@ credential = function(
   # Adds from xsAnnotate: ciso_a, ciso_b, ccharge_a, ccharge_b, cacharge_a, cacharge_b, crule_a, crule_b
   m_i = addIsoAdd(matches, an_a, an_b) 
   
-  m_ic = filterChargeSupport(m_i)
+  m_i2 = filterMpc(m_i, mpc_f)
+  
+  m_ic = filterChargeSupport(m_i2)
   csum = c(csum,  paste(sep=" ","After filtering based on charge support. Unique peaknum_a aligns: ", length(unique(m_ic[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_ic)))
-           
+  
   m_icm = filterMaxo(
     m_ic, 
     peaks_a,
