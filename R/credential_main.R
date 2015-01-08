@@ -1,22 +1,21 @@
 credential = function(
-  xs_a,
-  r_12t13_a,
   an_a, 
+  r_12t13_a,
   
-  xs_b, 
-  r_12t13_b,
-  an_b, 
+  an_b,
+  r_12t13_b, 
+  
+  grouped_xs, # Accepts list where each item is a numeric vector of peak numbers aligned/grouped xcms set where the order of samples is an_a, an_b and the peaks are in the same order.  You can also specify your own grouping in xs@groupidx if you can do better than xcms.
   
   isotope_rt_delta_s = 5,
-  ppm_for_isotopes = 4,
-  ppm_for_isotopes_formula = NULL, # f(); Takes a mass and returns a +/- ppm (2*ppm would be the window). Must be vectorized
-  
+  ppm_for_isotopes = 4,# A number or a function(mz); Takes a mass and returns a +/- ppm (2*ppm would be the window). Must be vectorized
+
   mixed_ratio_factor = 4,
   mixed_ratio_ratio_factor = 1.8,
-  xs_a_file=NULL, 
-  xs_b_file=NULL,
-  mpc_f= 1,
-  write_files = T
+  
+  mpc_f= 1.1,
+  write_files = T,
+  .parallel = F
   ) {
   
   csum=c()
@@ -28,30 +27,35 @@ credential = function(
                        c("ppm_for_isotopes", ppm_for_isotopes),
                        c("mixed_ratio_factor", mixed_ratio_factor),
                        c("mixed_ratio_ratio_factor", mixed_ratio_ratio_factor),
-                       c("xs_a_file", xs_a_file),
-                       c("xs_b_file", xs_b_file),
                        c("mpc_f", mpc_f)
   ))
   
-  if (!is.null(xs_a_file)) {xs_a@filepaths = xs_a_file  }
-  if (!is.null(xs_b_file)) {xs_b@filepaths = xs_b_file  }
+  if (any(!file.exists(an_a@xcmsSet@filepaths, an_b@xcmsSet@filepaths))) {
+    stop("Raw data not found: xsAnnotate@xcmsSet@filepaths must point to the raw data.")
+  }
+  
+  if(is.numeric(ppm_for_isotopes)) {
+    ppm = ppm_for_isotopes
+    ppm_for_isotopes = function(mz) { return(rep(eval(ppm),length(mz))) }
+  }
   
   data(mpc)
   #mpc = read.csv(header=T, file="dependencies/mm_mpc.csv")
   mpc = mpc[1:150,,drop=F]
   
-  peaks_a = prep_peaktable(xs_a@peaks)
-  peaks_b = prep_peaktable(xs_b@peaks)
+  peaks_a = prep_peaktable(an_a@xcmsSet@peaks)
+  peaks_b = prep_peaktable(an_b@xcmsSet@peaks)
   
   #Generate pairwise matches of isotopic mass within each sample
   pwms_a = pwms(peaks_a, 
                 isotope_rt_delta_s = isotope_rt_delta_s, 
                 ppm_for_isotopes = ppm_for_isotopes,
-                ppm_for_isotopes_formula = ppm_for_isotopes_formula,
                 mpc = mpc,
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_a,
-                mixed_ratio_factor = mixed_ratio_factor)
+                mixed_ratio_factor = mixed_ratio_factor,
+                .parallel = .parallel
+                )
   has_match_a = sapply(pwms_a, nrow) > 0
   csum = c(csum, paste(sep=" ","A - peaks:",nrow(peaks_a), "Pairwise matches: ",sum(sapply(pwms_a, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(has_match_a)))
   
@@ -59,18 +63,19 @@ credential = function(
   pwms_b = pwms(peaks_b, 
                 isotope_rt_delta_s =isotope_rt_delta_s, 
                 ppm_for_isotopes =ppm_for_isotopes,
-                ppm_for_isotopes_formula = ppm_for_isotopes_formula,
                 mpc = mpc,
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_b,
-                mixed_ratio_factor = mixed_ratio_factor)
+                mixed_ratio_factor = mixed_ratio_factor,
+                .parallel = .parallel
+                )
   has_match_b = sapply(pwms_b, nrow) > 0
   csum = c(csum, paste(sep=" ","B - peaks:",nrow(peaks_b), "Pairwise matches: ",sum(sapply(pwms_b, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(has_match_b)))
                     
   if(length(pwms_a) < 1 || length(pwms_b) < 1) {stop("No pairwise matches found.  Labeled samples? Proper ratio?")}
   
-  cat("\nAligning Samples.\n")
-  aligns = xsAlignCred(peaks_a[has_match_a,,drop=F], peaks_b[has_match_b,,drop=F], xs_a, xs_b)
+  cat("\nBuilding Alignment Index.\n")
+  aligns = buildAlignIndex(grouped_xs)
   csum = c(csum, paste(sep=" ","Unique peaknum_a aligns: ", length(unique(aligns[,"peaknum_a"])), ". Total aligns: ", nrow(aligns)))
 
   # Possible alternative, manually group and match.  Probably a good idea.
@@ -151,9 +156,13 @@ credential = function(
   
   if (write_files) {
     write.csv(cfs, "credentialed_features.csv", row.names=F)
-    write.csv(mf, "raw_credentialed_features", row.names=F)
+    write.csv(mf, "credentialed_features_raw", row.names=F)
     writeLines(csum, "credential_summary.txt")
     write.csv(bcfs, "credentialed_features_bad.csv", row.names=F)
+    
+    pdf("credentialed_maxo_graphic.pdf", width=6, height = 12)
+    # TODO: Add this
+    dev.off()
   }
   
   return(cfs)

@@ -2,7 +2,6 @@ mPeaks = function(
   peak, 
   peaks, 
   ppm_for_isotopes,
-  ppm_for_isotopes_formula,
   isotope_rt_delta_s,
   mpc,
   mpc_f,
@@ -31,11 +30,7 @@ mPeaks = function(
     maxmpc[is.na(maxmpc)] = mpc[nrow(mpc),"max_mpc"]
     minmpc[is.na(minmpc)] = mpc[nrow(mpc),"min_mpc"]
     
-    if (!is.null(ppm_for_isotopes_formula)) {
-      ppm_mz = ppm_for_isotopes_formula(peaks[,"mz"])
-    } else {
-      ppm_mz = ppm_for_isotopes
-    }
+    ppm_mz = ppm_for_isotopes(peaks[,"mz"])
     
     x = complete.cases(peaks[,"mz"]) & #No filtering - all match
       #peaks$p_rt_diff < isotope_rt_delta_s & #Exclude all peaks which do not elute within x seconds
@@ -58,7 +53,6 @@ pwms = function(
   peak_table,
   isotope_rt_delta_s, 
   ppm_for_isotopes,
-  ppm_for_isotopes_formula,
   mpc,
   mpc_f,
   mixed_ratio_12t13,
@@ -74,13 +68,13 @@ pwms = function(
   the_rt_index = indexRt(peak_table, isotope_rt_delta_s)
   
   cat("\nWorking on", nrow(peak_table), "peaks:\n")
-  pairwise_matches = alply(peak_table, 1, .progress="text", function(peak) {
+  pairwise_matches = alply(peak_table, 1, .progress="text", .parallel = T, function(peak) {
                                                               #peak = peak_table[n,,drop=F]
                                                               
                                                               coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
                                                               peaks = peak_table[coeluting, ,drop=F]
                                                               
-                                                              mPeaks(peak, peaks, ppm_for_isotopes, ppm_for_isotopes_formula, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
+                                                              mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
   })
   
   count = sum(sapply(pairwise_matches, function(x) { nrow(x) }), na.rm=T)
@@ -176,29 +170,10 @@ align = function (
   hum
 }
 
-xsAlignCred = function(
-  peaks_a,
-  peaks_b,
-  xs_a,
-  xs_b
-) {
-  xs = c(xs_a,xs_b)
-  peaks_a[,"sample"] = rep(1,nrow(peaks_a))
-  peaks_b[,"sample"] = rep(2,nrow(peaks_b))
-  xs@peaks = rbind(as.matrix(peaks_a),as.matrix(peaks_b))
-  
-  xsAlign(xs)
-}
 
-xsAlign = function(
+buildAlignIndex = function(
   xs
   ) { #TODO: Fix up grouping
-  
-  xs = group(xs, method="density", bw = 10, minsamp=1, mzwid=.01)
-  xs = retcor(xs, method="obiwarp", center = 1)
-  xs = group(xs, method="density", bw = 5, minsamp=1, mzwid=.01)
-  cat("\n")
-  
   npeaks = sum(xs@peaks[,"sample"]==1)
   hum = ldply(xs@groupidx, .progress="text", function(x) {
     peaks_from_1 = x <= npeaks
@@ -206,7 +181,7 @@ xsAlign = function(
     if(!any(peaks_from_1) || !any(!peaks_from_1)) { return(NULL) }
     
     ldply(which(peaks_from_1), function(y) {
-      cbind(peaknum_a = xs@peaks[x[y],"peaknum"], peaknum_b = xs@peaks[x[!peaks_from_1],"peaknum"])
+      cbind(peaknum_a = x[y], peaknum_b = x[!peaks_from_1] - npeaks)
     })
   })
   
