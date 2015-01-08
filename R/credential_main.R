@@ -15,7 +15,7 @@ credential = function(
   
   mpc_f= 1.1,
   write_files = T,
-  .parallel = F
+  #.parallel = F
   ) {
   
   csum=c()
@@ -54,7 +54,6 @@ credential = function(
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_a,
                 mixed_ratio_factor = mixed_ratio_factor,
-                .parallel = .parallel
                 )
   has_match_a = sapply(pwms_a, nrow) > 0
   csum = c(csum, paste(sep=" ","A - peaks:",nrow(peaks_a), "Pairwise matches: ",sum(sapply(pwms_a, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(has_match_a)))
@@ -67,7 +66,6 @@ credential = function(
                 mpc_f = mpc_f,
                 mixed_ratio_12t13 = r_12t13_b,
                 mixed_ratio_factor = mixed_ratio_factor,
-                .parallel = .parallel
                 )
   has_match_b = sapply(pwms_b, nrow) > 0
   csum = c(csum, paste(sep=" ","B - peaks:",nrow(peaks_b), "Pairwise matches: ",sum(sapply(pwms_b, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(has_match_b)))

@@ -56,7 +56,8 @@ pwms = function(
   mpc,
   mpc_f,
   mixed_ratio_12t13,
-  mixed_ratio_factor
+  mixed_ratio_factor,
+  .parallel=F
 ) {
   
   if (class(peak_table) != "matrix") { stop("peak_table not a matrix.") }
@@ -68,14 +69,18 @@ pwms = function(
   the_rt_index = indexRt(peak_table, isotope_rt_delta_s)
   
   cat("\nWorking on", nrow(peak_table), "peaks:\n")
-  pairwise_matches = alply(peak_table, 1, .progress="text", .parallel = T, function(peak) {
-                                                              #peak = peak_table[n,,drop=F]
-                                                              
-                                                              coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
-                                                              peaks = peak_table[coeluting, ,drop=F]
-                                                              
-                                                              mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
-  })
+  pairwise_matches = alply(peak_table, 
+                           1, 
+                           .progress="text", 
+                           function(peak) {
+                              #peak = peak_table[n,,drop=F]
+                              
+                              coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
+                              peaks = peak_table[coeluting, ,drop=F]
+                              
+                              mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
+                          }
+  )
   
   count = sum(sapply(pairwise_matches, function(x) { nrow(x) }), na.rm=T)
   names(pairwise_matches) = peak_table[,"peaknum"]
