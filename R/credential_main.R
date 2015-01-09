@@ -152,19 +152,19 @@ credential = function(
     #Filtered hist(maxo_r)
     f_maxors = list(
       
-      ggplot(mf, aes(x=log10(a_maxo_r/b_maxo_r), xintercept=log10(r_12t13_a/r_12t13_b))) +
+      ggplot(mf, aes(x=log10(a_maxo_r/b_maxo_r))) +
         geom_histogram(fill="white", colour="black", binwidth=0.0025) + xlim(-0.1,0.1) +
-        geom_vline() +
+        geom_vline(xintercept=log10(r_12t13_a/r_12t13_b)) +
         ggtitle("Maxo Ratio of Sample A/B; Filtered"),
       
-      ggplot(mf, aes(x=log10(a_maxo_r), xintercept=log10(r_12t13_a))) +
+      ggplot(mf, aes(x=log10(a_maxo_r))) +
         geom_histogram(fill="white", colour="black", binwidth=0.015) + xlim(-0.5,0.5) +
-        geom_vline() +
+        geom_vline(xintercept=log10(r_12t13_a)) +
         ggtitle("Maxo Ratio of Sample A; Filtered"),
       
-      ggplot(mf, aes(x=log10(b_maxo_r), xintercept=log10(r_12t13_b))) +
+      ggplot(mf, aes(x=log10(b_maxo_r))) +
         geom_histogram(fill="white", colour="black", binwidth=0.015) + xlim(-0.5,0.5) +
-        geom_vline() +
+        geom_vline(xintercept=log10(r_12t13_b)) +
         ggtitle("Maxo Ratio of Sample B; Filtered")
       
     )
@@ -178,35 +178,34 @@ credential = function(
     #Unfiltered hist(maxo_r)
     unf_maxors = list(
       
-      ggplot(unf, aes(x=log10(a_maxo_r/b_maxo_r), xintercept=log10(r_12t13_a/r_12t13_b))) +
+      ggplot(unf, aes(x=log10(a_maxo_r/b_maxo_r))) +
         geom_histogram(fill="white", colour="black", binwidth=0.1) + xlim(-5,5) +
-        geom_vline() +
+        geom_vline(xintercept=log10(r_12t13_a/r_12t13_b)) +
         ggtitle("Maxo Ratio of Sample A/B"),
       
-      ggplot(unf, aes(x=log10(a_maxo_r), xintercept=log10(r_12t13_a))) +
+      ggplot(unf, aes(x=log10(a_maxo_r))) +
         geom_histogram(fill="white", colour="black", binwidth=0.1) + xlim(-5,5) +
-        geom_vline() +
+        geom_vline(xintercept=log10(r_12t13_a)) +
         ggtitle("Maxo Ratio of Sample A"),
       
-      ggplot(unf, aes(x=log10(b_maxo_r), xintercept=log10(r_12t13_b))) +
+      ggplot(unf, aes(x=log10(b_maxo_r))) +
         geom_histogram(fill="white", colour="black", binwidth=0.1) + xlim(-5,5) +
-        geom_vline() +
+        geom_vline(xintercept=log10(r_12t13_b)) +
         ggtitle("Maxo Ratio of Sample B")
       
     )
     
     
     raw = cbind(mf, an@xcmsSet@peaks[mf[,"master_peaknum_a"],])
-    plotme = data.frame(mz = min(raw[,"mz"]:max(raw[,"mz"]), ppm = ppm_for_isotopes(min(raw[,"mz"]:max(raw[,"mz"])))
+    plotme = data.frame(mz = min(raw[,"mz"]):max(raw[,"mz"]), ppm = ppm_for_isotopes(min(raw[,"mz"]):max(raw[,"mz"])))
     
     pdf(paste0(prepath,"/credentialed_maxo_graphic.pdf"), width=10, height = 12)
     #ppm vs maxo
-    ggplot(raw, aes(x=mz, y=p_iso_ppm_a, colour=log10(maxo))) + 
+    ggplot(data=raw, aes(x=mz, y=p_iso_ppm_a, colour=log10(maxo))) + 
       geom_point() +
       scale_colour_continuous(low="white", high="darkblue") + 
       ggtitle("ppm Error Comparing U12C to U13C") + 
-      geom_line(data = plotme)
-    
+      geom_line(data = plotme, mapping= aes(x = mz, y=ppm, colour = "black"))
     do.call("grid.arrange", unf_maxors)
     
     do.call("grid.arrange", f_maxors)
