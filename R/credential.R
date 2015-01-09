@@ -330,7 +330,7 @@ addIsoAdd = function(
   pns = mf_s[,"master_peaknum_a"]
   ns = matrix(NA, nrow = nrow(mf_s), ncol=5, dimnames = list(NULL,c("psg", "cacharge", "carule", "ciso", "ccharge")))
   
-  iso_add = l_ply(which(!sapply(an@isotopes,is.null)), .progress="text", function(group) {
+  iso_add = l_ply(which(!sapply(an@isotopes,is.null)), function(group) {
     possible_peaks = an@xcmsSet@groupidx[[group]]
     peaks = possible_peaks[possible_peaks %in% pns]
     if (length(peaks) < 1) { return(NULL) }
@@ -344,7 +344,7 @@ addIsoAdd = function(
     ns <<- ns
     })
   
-  add_add = l_ply(which(!sapply(an@derivativeIons,is.null)), .progress="text", function(group) {
+  add_add = l_ply(which(!sapply(an@derivativeIons,is.null)), function(group) {
     possible_peaks = an@xcmsSet@groupidx[[group]]
     peaks = possible_peaks[possible_peaks %in% pns]
     if (length(peaks) < 1) { return(NULL) }
@@ -358,7 +358,7 @@ addIsoAdd = function(
     ns <<- ns
   })
   
-  ps_add = l_ply(1:length(an@pspectra), .progress="text", function(i) {
+  ps_add = l_ply(1:length(an@pspectra), function(i) {
     possible_peaks = an@pspectra[[i]]
     peaks = possible_peaks[possible_peaks %in% pns]
     if (length(peaks) < 1) { return(NULL) }
