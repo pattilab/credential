@@ -7,4 +7,4 @@ Author: Nathaniel Mahieu
 Maintainer: Nathaniel Mahieu <nathaniel.mahieu@wustl.edu>
 Description: Searches for pairs of U12C/U13C labeled peaks in metabolomic data.  Compatible with any chromatography coupled to an accurate-mass mass analyzer.
 License: 
-Depends: xcms, data.table, plyr, CAMERA
+Depends: xcms, data.table, plyr, CAMERA, ggplot2
