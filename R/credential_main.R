@@ -111,7 +111,7 @@ credential = function(
   if (write_files) {
     
     prepath = paste(sep="_", "credential", round(as.numeric(Sys.time())))  
-    dir.create(path, showWarnings = FALSE)
+    dir.create(prepath, showWarnings = FALSE)
     dump("ppm_for_isotopes", paste0(prepath,"/ppm_for_isotopes_dump.R"))
     
     
