@@ -117,9 +117,9 @@ credential = function(
                  c("mixed_ratio_factor", mixed_ratio_factor),
                  c("mixed_ratio_ratio_factor", mixed_ratio_ratio_factor),
                  c("mpc_f", mpc_f)))
-    csum = c(csum, paste(sep=" ","A - peaks:",nrow(peaks_a), "Pairwise matches: ",sum(sapply(pwms_a, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(sapply(pwms_a, nrow) > 0)))
+    csum = c(csum, paste(sep=" ","\n\nA - peaks:",nrow(peaks_a), "Pairwise matches: ",sum(sapply(pwms_a, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(sapply(pwms_a, nrow) > 0)))
     csum = c(csum, paste(sep=" ","B - peaks:",nrow(peaks_b), "Pairwise matches: ",sum(sapply(pwms_b, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(sapply(pwms_b, nrow) > 0)))
-    csum = c(csum, paste(sep=" ","Unique peaknum_a aligns: ", length(unique(aligns[,"peaknum_a"])), ". Total aligns: ", nrow(aligns)))
+    csum = c(csum, paste(sep=" ","\n\nUnique peaknum_a aligns: ", length(unique(aligns[,"peaknum_a"])), ". Total aligns: ", nrow(aligns)))
     csum = c(csum,  paste(sep=" ","After combination and carbon/charge filtering between samples. Unique peaknum_a aligns: ", length(unique(matches[,"master_peaknum_a"])), ". Total possibilities: ", nrow(matches)))
     csum = c(csum,  paste(sep=" ","After filtering based on maxo ratios. Unique peaknum_a aligns: ", length(unique(m_icm[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_icm)))
     csum = c(csum,  paste(sep=" ","After filtering based on CAMERA isotopes. Unique peaknum_a aligns: ", length(unique(m_icmi[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_icmi)))
@@ -129,7 +129,7 @@ credential = function(
     csum = c(csum,  paste(sep=" ","After filtering for lowest charge state. Unique peaknum_a aligns: ", length(unique(m_icmidpc[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_icmidpc)))
     csum = c(csum,  paste(sep=" ","After filtering by assuming the common carbon number is correct (bad filter). Unique peaknum_a aligns: ", length(unique(m_icmidpcn[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_icmidpcn)))
     csum = c(csum,  paste(sep=" ","After filtering by picking the heaviest match (bad filter). Unique peaknum_a aligns: ", length(unique(m_icmidpcnh[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_icmidpcnh)))
-    csum = c(csum,  paste(sep=" ","Good credentialed features (credentialed_features.csv): ", nrow(cfs)))
+    csum = c(csum,  paste(sep=" ","\n\nGood credentialed features (credentialed_features.csv): ", nrow(cfs)))
     csum = c(csum,  paste(sep=" ","Bad credentialed features (credentialed_features_bad.csv): ", nrow(bcfs)))
     
     write.csv(cfs, "credentialed_features.csv", row.names=F)
@@ -137,9 +137,9 @@ credential = function(
     writeLines(csum, "credential_summary.txt")
     write.csv(bcfs, "credentialed_features_bad.csv", row.names=F)
     
-    pdf("credentialed_maxo_graphic.pdf", width=6, height = 12)
+    #pdf("credentialed_maxo_graphic.pdf", width=6, height = 12)
     # TODO: Add this
-    dev.off()
+    #dev.off()
   }
   
   return(cfs)
