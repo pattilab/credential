@@ -2,12 +2,9 @@ mPeaks = function(
   peak, 
   peaks, 
   ppm_for_isotopes,
-  ppm_for_isotopes_formula,
   isotope_rt_delta_s,
   mpc,
-  mpc_f,
-  min_maxo_r,
-  max_maxo_r
+  mpc_f
 ) {
   p_rt_diff = abs(peaks[,"rt"] - peak["rt"])
   peaks = peaks[p_rt_diff < isotope_rt_delta_s, ,drop=F] #First get rid of extra RT peaks to cut down on comparisons
@@ -31,11 +28,7 @@ mPeaks = function(
     maxmpc[is.na(maxmpc)] = mpc[nrow(mpc),"max_mpc"]
     minmpc[is.na(minmpc)] = mpc[nrow(mpc),"min_mpc"]
     
-    if (!is.null(ppm_for_isotopes_formula)) {
-      ppm_mz = ppm_for_isotopes_formula(peaks[,"mz"])
-    } else {
-      ppm_mz = ppm_for_isotopes
-    }
+    ppm_mz = ppm_for_isotopes(peaks[,"mz"])
     
     x = complete.cases(peaks[,"mz"]) & #No filtering - all match
       #peaks$p_rt_diff < isotope_rt_delta_s & #Exclude all peaks which do not elute within x seconds
@@ -43,9 +36,9 @@ mPeaks = function(
       peaks[,"p_iso_ppm"] < ppm_mz & #Prospective isotope must be n*(C13-C12) m/z away
       peaks[,"p_mpc"] <= maxmpc * mpc_f &
       peaks[,"p_mpc"] >= minmpc / mpc_f &
-      peaks[,"p_carbons"] > 0 &
-      peaks[,"p_maxo_r"] < max_maxo_r  & #Single Sample maxo Ratio
-      peaks[,"p_maxo_r"] > min_maxo_r  #Single Sample maxo Ratio
+      peaks[,"p_carbons"] > 0
+      #peaks[,"p_maxo_r"] < max_maxo_r  & #Single Sample maxo Ratio
+      #peaks[,"p_maxo_r"] > min_maxo_r  #Single Sample maxo Ratio
     
     peaks[x, c("peaknum", "p_charge", "p_carbons", "p_mpc", "p_iso_ppm")]
   })
@@ -58,30 +51,27 @@ pwms = function(
   peak_table,
   isotope_rt_delta_s, 
   ppm_for_isotopes,
-  ppm_for_isotopes_formula,
   mpc,
-  mpc_f,
-  mixed_ratio_12t13,
-  mixed_ratio_factor
+  mpc_f
 ) {
   
   if (class(peak_table) != "matrix") { stop("peak_table not a matrix.") }
-  #if (any(!(c("mz") %in% colnames(peak)))) { stop("Peak missing a required column.") } 
-  
-  min_maxo_r = mixed_ratio_12t13/mixed_ratio_factor
-  max_maxo_r = mixed_ratio_12t13*mixed_ratio_factor
   
   the_rt_index = indexRt(peak_table, isotope_rt_delta_s)
   
-  cat("\nWorking on", nrow(peak_table), "peaks:\n")
-  pairwise_matches = alply(peak_table, 1, .progress="text", function(peak) {
-                                                              #peak = peak_table[n,,drop=F]
-                                                              
-                                                              coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
-                                                              peaks = peak_table[coeluting, ,drop=F]
-                                                              
-                                                              mPeaks(peak, peaks, ppm_for_isotopes, ppm_for_isotopes_formula, isotope_rt_delta_s, mpc, mpc_f, min_maxo_r, max_maxo_r)
-  })
+  cat("\nLooking for pairwise 13C isotopic peak matches within", nrow(peak_table), "peaks:\n")
+  pairwise_matches = alply(peak_table, 
+                           1, 
+                           .progress="text", 
+                           function(peak) {
+                              #peak = peak_table[n,,drop=F]
+                              
+                              coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
+                              peaks = peak_table[coeluting, ,drop=F]
+                              
+                              mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f)
+                          }
+  )
   
   count = sum(sapply(pairwise_matches, function(x) { nrow(x) }), na.rm=T)
   names(pairwise_matches) = peak_table[,"peaknum"]
@@ -90,17 +80,14 @@ pwms = function(
   pairwise_matches
 }
 
-filterMpc = function(pwmsx, mpc_f) {
+filterMpc = function(matches, mpc_f) {
+  cat("\nFiltering matches based on mass per carbon limits.\n")
   
-  mpclist = aaply(pwmsx, 1, function(x) {
-    c(
-      min_mpc=mpc[x["p_carbons_a"],"min_mpc"]/mpc_f,
-      max_mpc=mpc[x["p_carbons_a"],"max_mpc"]*mpc_f
-      )
-    })
-  
-  pwmsx[
-    pwmsx[,"p_mpc_a"] < mpclist[,"max_mpc"] & pwmsx[,"p_mpc_a"] > mpclist[,"min_mpc"]
+  minmpc = mpc[matches[, "p_carbons_a"],"min_mpc"]/mpc_f
+  maxmpc = mpc[matches[, "p_carbons_a"],"max_mpc"]*mpc_f
+
+  foo = matches[
+    (matches[,"p_mpc_a"] < maxmpc & matches[,"p_mpc_a"] > minmpc)
     ,,drop=F]
 }
 
@@ -108,7 +95,7 @@ filterMpc = function(pwmsx, mpc_f) {
 buildChargeSupport = function(
   pwmsx
 ) { 
-  cat("\nWorking on", length(pwmsx), "peaks:\n")
+  cat("\nTrying to determine charge state based on isotopic spacings on", length(pwmsx), "peaks:\n")
   pairwise_matches = llply(1:length(pwmsx), .progress="text", function(i) {
    ms = pwmsx[[i]]                               
    ms = ms[order(ms[,"p_carbons"]),,drop=F][order(ms[,"p_charge"]),,drop=F]
@@ -117,12 +104,6 @@ buildChargeSupport = function(
      peaks = ms[which(ms[,"p_charge"] == c),,drop=F]
      
      spacing = c(peaks[,"p_carbons"][-1] - peaks[,"p_carbons"][-length(peaks[,"p_carbons"])], 0)
-     
-     #      if (length(spacing) > 2) {
-     #        for(i in 2:(length(spacing)-1)) { #multiple of one iso detected
-     #          if(length(spacing[i-1]) > 0 & spacing[i-1] == 1 & spacing[i+1] == 1 ) { spacing[i] = 1 }
-     #        }
-     #      }
      
      for (i in 1:length(spacing)) {
        if(spacing[i] > 1) { spacing[i] = 0 }
@@ -176,29 +157,10 @@ align = function (
   hum
 }
 
-xsAlignCred = function(
-  peaks_a,
-  peaks_b,
-  xs_a,
-  xs_b
-) {
-  xs = c(xs_a,xs_b)
-  peaks_a[,"sample"] = rep(1,nrow(peaks_a))
-  peaks_b[,"sample"] = rep(2,nrow(peaks_b))
-  xs@peaks = rbind(as.matrix(peaks_a),as.matrix(peaks_b))
-  
-  xsAlign(xs)
-}
 
-xsAlign = function(
+buildAlignIndex = function(
   xs
   ) { #TODO: Fix up grouping
-  
-  xs = group(xs, method="density", bw = 10, minsamp=1, mzwid=.01)
-  xs = retcor(xs, method="obiwarp", center = 1)
-  xs = group(xs, method="density", bw = 5, minsamp=1, mzwid=.01)
-  cat("\n")
-  
   npeaks = sum(xs@peaks[,"sample"]==1)
   hum = ldply(xs@groupidx, .progress="text", function(x) {
     peaks_from_1 = x <= npeaks
@@ -206,7 +168,7 @@ xsAlign = function(
     if(!any(peaks_from_1) || !any(!peaks_from_1)) { return(NULL) }
     
     ldply(which(peaks_from_1), function(y) {
-      cbind(peaknum_a = xs@peaks[x[y],"peaknum"], peaknum_b = xs@peaks[x[!peaks_from_1],"peaknum"])
+      cbind(peaknum_a = x[y], peaknum_b = x[!peaks_from_1] - npeaks)
     })
   })
   
@@ -270,8 +232,7 @@ pickLowestCharge = function(
   pairs = paste(sep=".", ams[,"master_peaknum_a"], ams[,"master_peaknum_b"], ams[,"peaknum_a"], ams[,"peaknum_b"])
   unique_pairs = unique(pairs)
   cat("\nWorking on ",length(unique_pairs), "total:\n")
-  tmp = lapply(1:length(unique_pairs), function(i) {
-    cat("\r", i); flush.console();
+  tmp = llply(1:length(unique_pairs), .progress="text", function(i) {
     
     pair = unique_pairs[i]
     
@@ -357,52 +318,58 @@ filterIsos = function(
   pms
   ) {
   cat("\nBefore CAMERA isotope removal. Unique: ", length(unique(pms[,"master_peaknum_a"])), "Total: ", length(pms[,"master_peaknum_a"]), "\n")
-  pms = pms[((is.na(pms[,"ciso_a"]) |  pms[,"ciso_a"] < 1)) & ((is.na(pms[,"ciso_b"]) |  pms[,"ciso_b"] < 1)),]
+  pms = pms[((is.na(pms[,"ciso"]) |  pms[,"ciso"] < 1)),]
   cat("\nAfter CAMERA isotope removal. Unique: ", length(unique(pms[,"master_peaknum_a"])), "Total: ", length(pms[,"master_peaknum_a"]), "\n")
   pms
 }
 
 addIsoAdd = function(
   mf_s, 
-  an_a,
-  an_b
-) { #TODO: Incoporate earlier in workflow
-  #add_iso_info
+  an
+) { cat("\nCompiling adduct and isotopic data from CAMERA analysis.\n")
+  pns = mf_s[,"master_peaknum_a"]
+  ns = matrix(NA, nrow = nrow(mf_s), ncol=5, dimnames = list(NULL,c("psg", "cacharge", "carule", "ciso", "ccharge")))
   
-  iso_add = alply(mf_s, 1, function(peak) {
-    iso_a = an_a@isotopes[[peak["master_peaknum_a"]]]
-    if (is.null(iso_a)) { isos_a = c(NA, NA)
-      } else { isos_a = c(iso_a$iso, iso_a$charge) }
+  iso_add = l_ply(which(!sapply(an@isotopes,is.null)), .progress="text", function(group) {
+    possible_peaks = an@xcmsSet@groupidx[[group]]
+    peaks = possible_peaks[possible_peaks %in% pns]
+    if (length(peaks) < 1) { return(NULL) }
     
-    ad_a = an_a@derivativeIons[[(peak["master_peaknum_a"])]]
-    if (is.null(ad_a)) { ads_a = c(NA, NA) 
-      } else { ads_a = c(ad_a[[1]]$rule_id, ad_a[[1]]$charge) }
+    i = an@isotopes[[group]]
     
-    iso_b = an_b@isotopes[[peak["master_peaknum_b"]]]
-    if (is.null(iso_b)) { isos_b = c(NA, NA) 
-      } else { isos_b = c(iso_b$iso, iso_b$charge) }
-    
-    ad_b = an_b@derivativeIons[[(peak["master_peaknum_b"])]]
-    if (is.null(ad_b)) { ads_b = c(NA, NA) 
-      } else { ads_b = c(ad_b[[1]]$rule_id, ad_b[[1]]$charge) }
-    
-    return(c(isos_a, ads_a, isos_b, ads_b))
-  })
-  iso_add = do.call("rbind", iso_add)
-  colnames(iso_add) = c("ciso_a", "ccharge_a", "crule_a", "cacharge_a", "ciso_b", "ccharge_b", "crule_b", "cacharge_b")
+    n = length(peaks)
+    ns[peaks,
+       c("ciso", "ccharge")
+       ] = c(rep(i$iso,n), rep(i$charge, n))
+    ns <<- ns
+    })
   
-  #Add PS info
-  pspecs = lapply(1:length(an_a@pspectra), function(i) {
-    cbind(peaknum = rep(i, length(an_a@pspectra[[i]])), psg = an_a@pspectra[[i]])
-  })
-  pspecs = do.call("rbind", pspecs)
+  add_add = l_ply(which(!sapply(an@derivativeIons,is.null)), .progress="text", function(group) {
+    possible_peaks = an@xcmsSet@groupidx[[group]]
+    peaks = possible_peaks[possible_peaks %in% pns]
+    if (length(peaks) < 1) { return(NULL) }
+    
+    d = an@derivativeIons[[group]]
   
-  pspecs2 = sapply(1:nrow(mf_s), function(x) {
-    peak = mf_s[x,,drop=F]
-    pspecs[which(pspecs[,"peaknum"] == peak[,"peaknum_a"]), "psg"][1]
+    n = length(peaks)
+    ns[peaks,
+       c("carule", "cacharge")
+       ] = c(rep(d[[1]]$rule_id, n), rep(d[[1]]$charge, n))
+    ns <<- ns
   })
   
-  cbind(mf_s, iso_add, pspec = pspecs2)
+  ps_add = l_ply(1:length(an@pspectra), .progress="text", function(i) {
+    possible_peaks = an@pspectra[[i]]
+    peaks = possible_peaks[possible_peaks %in% pns]
+    if (length(peaks) < 1) { return(NULL) }
+    
+    ns[peaks,
+       c("psg")
+       ] = rep(i, length(peaks))
+    ns <<- ns
+  })
+  
+cbind(mf_s, ns)
 }
 
 removeDuplicatePeakPicks = function(
@@ -420,21 +387,21 @@ removeDuplicatePeakPicks = function(
 }
 
 filterChargeSupport = function(
-  mf_pd
-) {
-  ddply(as.data.frame(mf_pd), "master_peaknum_a", .progress="text", function(peaks) {
+  matches
+) { cat("\nLooking for consensus between manual charge prediction and CAMERA.\n")
+  ddply(as.data.frame(matches), "master_peaknum_a", .progress="text", function(peaks) {
     if (nrow(peaks) <= 1) { return(peaks) }
-    
+
     charge_supporta = sapply(1:max(peaks[,"p_charge_a"]), function(x) {
-      sum(peaks[x==peaks[,"p_charge_a"],"charge_support_a"] == 1)
+      sum(peaks[x==peaks[,"p_charge_a"],"charge_support_a"] > 0)
     })
     charge_supportb = sapply(1:max(peaks[,"p_charge_a"]), function(x) {
-      sum(peaks[x==peaks[,"p_charge_a"],"charge_support_b"] == 1)
+      sum(peaks[x==peaks[,"p_charge_a"],"charge_support_b"] > 0)
     })
-    eep <<- peaks
+
     camera_votes=lapply(1:100, function(x){0})
     camera_votes[101] = 1
-    for (y in c("ccharge_a","ccharge_b", "cacharge_a", "cacharge_b")) {
+    for (y in c("ccharge", "cacharge")) {
       if (y %in% colnames(peaks)) { 
         if(!is.na(peaks[1,y])) { 
           if (peaks[1,y] != 0) {
