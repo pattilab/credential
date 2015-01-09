@@ -196,6 +196,7 @@ credential = function(
     )
     
     
+    raw = cbind(mf, an@xcmsSet@peaks[mf[,"master_peaknum_a"],])
     
     pdf(paste0(prepath,"/credentialed_maxo_graphic.pdf"), width=10, height = 12)
     #ppm vs maxo
