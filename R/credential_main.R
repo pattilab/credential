@@ -111,7 +111,9 @@ credential = function(
   if (write_files) {
     
     prepath = paste(sep="_", "credential", round(as.numeric(Sys.time())))  
-    dump("ppm_for_isotopes", "ppm_for_isotopes_dump.R")
+    dir.create(path, showWarnings = FALSE)
+    dump("ppm_for_isotopes", paste0(prepath,"/ppm_for_isotopes_dump.R"))
+    
     
     csum = paste(llply(
       list( c("r_12t13_a", r_12t13_a),
