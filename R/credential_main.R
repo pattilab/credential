@@ -36,7 +36,6 @@ credential = function(
                 mpc = mpc,
                 mpc_f = mpc_f
                 )
-  has_match_a = sapply(pwms_a, nrow) > 0
 
   pwms_b = pwms(peaks_b, 
                 isotope_rt_delta_s =isotope_rt_delta_s, 
@@ -44,10 +43,7 @@ credential = function(
                 mpc = mpc,
                 mpc_f = mpc_f
                 )
-  has_match_b = sapply(pwms_b, nrow) > 0
-                
-  if(length(pwms_a) < 1 || length(pwms_b) < 1) {stop("No pairwise matches found.  Labeled samples? Proper ratio?")}
-  
+
   cat("\nBuilding alignment index between sample A and sample B based on supplied grouping.\n")
   aligns = buildAlignIndex(an@xcmsSet)
 
@@ -86,9 +82,6 @@ credential = function(
         
   #Remove camera isotopes
   m_icmi = filterIsos(m_icm)
-        
-  #Remove duplicated matches to partially labeled U13C peaks
-  #m_cmip = filterPartialLabeling(m_cm)
   
   # Remove very similar peaks found by the peakfinding (errors?)
   m_icmid = removeDuplicatePeakPicks(m_icmi)
@@ -124,8 +117,8 @@ credential = function(
                  c("mixed_ratio_factor", mixed_ratio_factor),
                  c("mixed_ratio_ratio_factor", mixed_ratio_ratio_factor),
                  c("mpc_f", mpc_f)))
-    csum = c(csum, paste(sep=" ","A - peaks:",nrow(peaks_a), "Pairwise matches: ",sum(sapply(pwms_a, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(has_match_a)))
-    csum = c(csum, paste(sep=" ","B - peaks:",nrow(peaks_b), "Pairwise matches: ",sum(sapply(pwms_b, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(has_match_b)))
+    csum = c(csum, paste(sep=" ","A - peaks:",nrow(peaks_a), "Pairwise matches: ",sum(sapply(pwms_a, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(sapply(pwms_a, nrow) > 0)))
+    csum = c(csum, paste(sep=" ","B - peaks:",nrow(peaks_b), "Pairwise matches: ",sum(sapply(pwms_b, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(sapply(pwms_b, nrow) > 0)))
     csum = c(csum, paste(sep=" ","Unique peaknum_a aligns: ", length(unique(aligns[,"peaknum_a"])), ". Total aligns: ", nrow(aligns)))
     csum = c(csum,  paste(sep=" ","After combination and carbon/charge filtering between samples. Unique peaknum_a aligns: ", length(unique(matches[,"master_peaknum_a"])), ". Total possibilities: ", nrow(matches)))
     csum = c(csum,  paste(sep=" ","After filtering based on maxo ratios. Unique peaknum_a aligns: ", length(unique(m_icm[,"master_peaknum_a"])), ". Total possibilities: ", nrow(m_icm)))
