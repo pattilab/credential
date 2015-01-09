@@ -10,9 +10,6 @@ formatPeaks = function(
     peak = mf[i,,drop=F]
     peak_a = ps[which(ps[,"peaknum"] == peak[,"master_peaknum_a"]),,drop=F]
     match_a = ps[which(ps[,"peaknum"] == peak[,"peaknum_a"]),,drop=F]
-    
-    crule = peak[,"crule_a"]; if (is.na(crule)) { crule = peak[,"crule_b"] }
-    ciso = peak[,"ciso_a"]; if (is.na(ciso)) { ciso = peak[,"ciso_b"] }
 
     cbind(
       peaknum_a = peak_a[,"peaknum"],
@@ -23,8 +20,8 @@ formatPeaks = function(
       rtmax= peak_a[,"rtmax"],
       match_mz = match_a[,"mz"],
       n_carbons = peak[,"p_carbons_a"],
-      adduct = crule,
-      iso = ciso,
+      adduct = peak[,"carule"],
+      iso = peak[,"ciso"],
       charge = peak[,"p_charge_a"],
       maxo = peak_a[,"maxo"]
     )
