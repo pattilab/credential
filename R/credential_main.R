@@ -109,14 +109,23 @@ credential = function(
   bcfs = formatPeaks(mf_lst$bad_peaks, peaks_a)
 
   if (write_files) {
-    csum = c(paste(sep = " - ", collapse="\n",
-                 c("r_12t13_a", r_12t13_a),
-                 c("r_12t13_b", r_12t13_b),
-                 c("isotope_rt_delta_s", isotope_rt_delta_s),
-                 c("ppm_for_isotopes", ppm_for_isotopes),
-                 c("mixed_ratio_factor", mixed_ratio_factor),
-                 c("mixed_ratio_ratio_factor", mixed_ratio_ratio_factor),
-                 c("mpc_f", mpc_f)))
+    
+    prepath = paste(sep="_", "credential", round(as.numeric(Sys.time())))  
+    dir.create(prepath, showWarnings = FALSE)
+    dump("ppm_for_isotopes", paste0(prepath,"/ppm_for_isotopes_dump.R"))
+    
+    
+    csum = paste(llply(
+      list( c("r_12t13_a", r_12t13_a),
+            c("r_12t13_b", r_12t13_b),
+            c("isotope_rt_delta_s", isotope_rt_delta_s),
+            c("ppm_for_isotopes", "See ppm_for_isotopes_dump.R"),
+            c("mixed_ratio_factor", mixed_ratio_factor),
+            c("mixed_ratio_ratio_factor", mixed_ratio_ratio_factor),
+            c("mpc_f", mpc_f)
+      ), 
+      paste, collapse=" - "), collapse="\n")
+    
     csum = c(csum, paste(sep=" ","\n\nA - peaks:",nrow(peaks_a), "Pairwise matches: ",sum(sapply(pwms_a, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(sapply(pwms_a, nrow) > 0)))
     csum = c(csum, paste(sep=" ","B - peaks:",nrow(peaks_b), "Pairwise matches: ",sum(sapply(pwms_b, function(x) { nrow(x) }), na.rm=T), "Has a match: ", sum(sapply(pwms_b, nrow) > 0)))
     csum = c(csum, paste(sep=" ","\n\nUnique peaknum_a aligns: ", length(unique(aligns[,"peaknum_a"])), ". Total aligns: ", nrow(aligns)))
@@ -132,14 +141,76 @@ credential = function(
     csum = c(csum,  paste(sep=" ","\n\nGood credentialed features (credentialed_features.csv): ", nrow(cfs)))
     csum = c(csum,  paste(sep=" ","Bad credentialed features (credentialed_features_bad.csv): ", nrow(bcfs)))
     
-    write.csv(cfs, "credentialed_features.csv", row.names=F)
-    write.csv(mf, "credentialed_features_raw", row.names=F)
-    writeLines(csum, "credential_summary.txt")
-    write.csv(bcfs, "credentialed_features_bad.csv", row.names=F)
+    write.csv(cfs, paste0(prepath,"/credentialed_features.csv"), row.names=F)
+    write.csv(mf, paste0(prepath,"/credentialed_features_raw_data"), row.names=F)
+    writeLines(csum, paste0(prepath,"/summary_of_credentialing_steps.txt"))
+    write.csv(bcfs, paste0(prepath,"/credentialed_features_indeterminant.csv"), row.names=F)
     
-    #pdf("credentialed_maxo_graphic.pdf", width=6, height = 12)
-    # TODO: Add this
-    #dev.off()
+    save("an", file=paste0(prepath,"/xsAnnotate.Rdata"))
+    save("mpc", file=paste0(prepath,"/mpc.Rdata"))
+    
+    #Filtered hist(maxo_r)
+    f_maxors = list(
+      
+      ggplot(mf, aes(x=log10(a_maxo_r/b_maxo_r))) +
+        geom_histogram(fill="white", colour="black", binwidth=0.0025) + xlim(-0.1,0.1) +
+        geom_vline(xintercept=log10(r_12t13_a/r_12t13_b)) +
+        ggtitle("Maxo Ratio of Sample A/B; Filtered"),
+      
+      ggplot(mf, aes(x=log10(a_maxo_r))) +
+        geom_histogram(fill="white", colour="black", binwidth=0.015) + xlim(-0.5,0.5) +
+        geom_vline(xintercept=log10(r_12t13_a)) +
+        ggtitle("Maxo Ratio of Sample A; Filtered"),
+      
+      ggplot(mf, aes(x=log10(b_maxo_r))) +
+        geom_histogram(fill="white", colour="black", binwidth=0.015) + xlim(-0.5,0.5) +
+        geom_vline(xintercept=log10(r_12t13_b)) +
+        ggtitle("Maxo Ratio of Sample B; Filtered")
+      
+    )
+    
+    
+    #build unfiltered
+    unf = cbind(m_ic,
+                a_maxo_r = peaks_a[m_ic[,"master_peaknum_a"],"maxo"] / peaks_a[m_ic[,"peaknum_a"],"maxo"],
+                b_maxo_r = peaks_b[m_ic[,"master_peaknum_b"],"maxo"] / peaks_b[m_ic[,"peaknum_b"],"maxo"]
+    )
+    #Unfiltered hist(maxo_r)
+    unf_maxors = list(
+      
+      ggplot(unf, aes(x=log10(a_maxo_r/b_maxo_r))) +
+        geom_histogram(fill="white", colour="black", binwidth=0.1) + xlim(-5,5) +
+        geom_vline(xintercept=log10(r_12t13_a/r_12t13_b)) +
+        ggtitle("Maxo Ratio of Sample A/B"),
+      
+      ggplot(unf, aes(x=log10(a_maxo_r))) +
+        geom_histogram(fill="white", colour="black", binwidth=0.1) + xlim(-5,5) +
+        geom_vline(xintercept=log10(r_12t13_a)) +
+        ggtitle("Maxo Ratio of Sample A"),
+      
+      ggplot(unf, aes(x=log10(b_maxo_r))) +
+        geom_histogram(fill="white", colour="black", binwidth=0.1) + xlim(-5,5) +
+        geom_vline(xintercept=log10(r_12t13_b)) +
+        ggtitle("Maxo Ratio of Sample B")
+      
+    )
+    
+    
+    raw = cbind(mf, an@xcmsSet@peaks[mf[,"master_peaknum_a"],])
+    plotme = data.frame(mz = min(raw[,"mz"]):max(raw[,"mz"]), ppm = ppm_for_isotopes(min(raw[,"mz"]):max(raw[,"mz"])))
+    
+    pdf(paste0(prepath,"/credentialed_maxo_graphic.pdf"), width=10, height = 12)
+    #ppm vs maxo
+    ggplot(data=raw, aes(x=mz, y=p_iso_ppm_a, colour=log10(maxo))) + 
+      geom_point() +
+      scale_colour_continuous(low="white", high="darkblue") + 
+      ggtitle("ppm Error Comparing U12C to U13C") + 
+      geom_line(data = plotme, mapping= aes(x = mz, y=ppm, colour = "black"))
+    do.call("grid.arrange", unf_maxors)
+    
+    do.call("grid.arrange", f_maxors)
+    
+    dev.off()
   }
   
   return(cfs)
