@@ -197,13 +197,15 @@ credential = function(
     
     
     raw = cbind(mf, an@xcmsSet@peaks[mf[,"master_peaknum_a"],])
+    plotme = data.frame(mz = min(raw[,"mz"]:max(raw[,"mz"]), ppm = ppm_for_isotopes(min(raw[,"mz"]:max(raw[,"mz"])))
     
     pdf(paste0(prepath,"/credentialed_maxo_graphic.pdf"), width=10, height = 12)
     #ppm vs maxo
     ggplot(raw, aes(x=mz, y=p_iso_ppm_a, colour=log10(maxo))) + 
       geom_point() +
       scale_colour_continuous(low="white", high="darkblue") + 
-      ggtitle("ppm Error Comparing U12C to U13C")
+      ggtitle("ppm Error Comparing U12C to U13C") + 
+      geom_line(data = plotme)
     
     do.call("grid.arrange", unf_maxors)
     
