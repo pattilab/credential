@@ -103,10 +103,12 @@ filterCorrs = function(pwmsx, peak_table, an, xr, sample) {
     min  = rt.raw[min]
     max  = rt.raw[max]
     
-    eic_peak = mov_av(rawEIC(xr, mzrange=peak[,c("mzmin", "mzmax")], rtrange=c(min, max))$intensity, 3)
+    eic_peak = rawEIC(xr, mzrange=peak[,c("mzmin", "mzmax")], rtrange=c(min, max))$intensity
+    if(length(eic_peak) > 6) {eic_peak = mov_av(eic_peak)}
     
     eic_peaks = alply(peaks, 1, function(x) {
-      mov_av(unlist(rawEIC(xr, mzrange=x[c("mzmin", "mzmax")], rtrange=c(min, max))$intensity),3)
+      temp = unlist(rawEIC(xr, mzrange=x[c("mzmin", "mzmax")], rtrange=c(min, max))$intensity)
+      if(length(temp) > 6) {temp = mov_av(temp)}
       })
     
     corrs_peaks = laply(eic_peaks, function(x) {
