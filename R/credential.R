@@ -345,11 +345,11 @@ addIsoAdd = function(
     iso_add = l_ply(which(!sapply(an@isotopes,is.null)), function(group) {
       possible_peaks = an@xcmsSet@groupidx[[group]]
       peaks = possible_peaks[possible_peaks %in% pns]
-      if (length(peaks) < 1) { return(NULL) }
+      if (length(which(pns %in% peaks)) < 1) { return(NULL) }
       
       i = an@isotopes[[group]]
       
-      n = length(peaks)
+      n = length(which(pns %in% peaks))
       ns[which(pns %in% peaks),
          c("ciso", "ccharge")
          ] = c(rep(i$iso,n), rep(i$charge, n))
@@ -359,11 +359,11 @@ addIsoAdd = function(
     add_add = l_ply(which(!sapply(an@derivativeIons,is.null)), function(group) {
       possible_peaks = an@xcmsSet@groupidx[[group]]
       peaks = possible_peaks[possible_peaks %in% pns]
-      if (length(peaks) < 1) { return(NULL) }
+      if (length(which(pns %in% peaks)) < 1) { return(NULL) }
       
       d = an@derivativeIons[[group]]
       
-      n = length(peaks)
+      n = length(which(pns %in% peaks))
       ns[which(pns %in% peaks),
          c("carule", "cacharge")
          ] = c(rep(d[[1]]$rule_id, n), rep(d[[1]]$charge, n))
@@ -373,7 +373,7 @@ addIsoAdd = function(
     ps_add = l_ply(1:length(an@pspectra), function(i) {
       possible_peaks = an@pspectra[[i]]
       peaks = possible_peaks[possible_peaks %in% pns]
-      if (length(peaks) < 1) { return(NULL) }
+      if (length(which(pns %in% peaks)) < 1) { return(NULL) }
       
       ns[which(pns %in% peaks),
          c("psg")
