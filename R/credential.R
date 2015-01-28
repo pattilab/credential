@@ -1,3 +1,10 @@
+mov_av <- function(x, n=3){
+  temp = filter(x,rep(1/n,n), sides=2)
+  nas = is.na(temp)
+  temp[which(nas)] = x[which(nas)]
+  as.numeric(temp)
+}
+
 mPeaks = function(
   peak, 
   peaks, 
@@ -60,24 +67,62 @@ pwms = function(
   the_rt_index = indexRt(peak_table, isotope_rt_delta_s)
   
   cat("\nLooking for pairwise 13C isotopic peak matches within", nrow(peak_table), "peaks:\n")
-  pairwise_matches = alply(peak_table, 
-                           1, 
-                           .progress="text", 
-                           function(peak) {
-                              #peak = peak_table[n,,drop=F]
-                              
-                              coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
-                              peaks = peak_table[coeluting, ,drop=F]
-                              
-                              mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f)
-                          }
-  )
+  pairwise_matches = alply(peak_table, 1, .progress="text", function(peak) {
+    coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
+    peaks = peak_table[coeluting, ,drop=F]
+    
+    mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f)
+})
   
   count = sum(sapply(pairwise_matches, function(x) { nrow(x) }), na.rm=T)
   names(pairwise_matches) = peak_table[,"peaknum"]
   cat("\nPeaks:",nrow(peak_table), "Pairwise matches: ",count)
   
   pairwise_matches
+}
+
+filterCorrs = function(pwmsx, peak_table, an, xr, sample) {
+  cat("\nCalculating EIC correlations between putative isotopes:")
+  rt.raw = an@xcmsSet@rt$raw[[sample]]
+  rt.corr = an@xcmsSet@rt$corrected[[sample]]
+  
+  tmp = llply(names(pwmsx), .progress="text", function(i) {
+    pns = unique(pwmsx[[i]][,"peaknum"])
+    pn = as.numeric(i)
+    if(length(pns) < 1) {return(pwmsx[[i]][numeric(),,drop=F])}
+    
+    peak = peak_table[pn,,drop=F]
+    peaks = peak_table[pns,,drop=F]
+    
+    min = min(c(peak[,"rtmin"], peaks[,"rtmin"]))
+    max = max(c(peak[,"rtmax"], peaks[,"rtmax"]))
+    
+    min = order(abs(min - rt.corr), decreasing = F)[1]
+    max = order(abs(max - rt.raw), decreasing = F)[1]
+    
+    min  = rti$raw[[sample]][min]
+    max  = rti$raw[[sample]][max]
+    
+    eic_peak = rawEIC(xr, mzrange=peak[,c("mzmin", "mzmax")], rtrange=c(min, max))$intensity
+    
+    eic_peaks = alply(peaks, 1, function(x) {
+      unlist(rawEIC(xr, mzrange=x[c("mzmin", "mzmax")], rtrange=c(min, max))$intensity)
+      })
+    
+    corrs_peaks = laply(eic_peaks, function(x) {
+      if(length(eic_peak) < 5 || length(x < 5)) {return(1)}
+      rcorr(eic_peak, x)[[1]][1,2]
+      })
+    
+    pns_passed = pns[corrs_peaks > 0.7]
+    
+    pwmsx[[i]][
+      pwmsx[[i]][,"peaknum"] %in% pns_passed,
+      ,drop=F
+      ]
+  })
+  names(tmp) = names(pwmsx)
+  tmp
 }
 
 filterMpc = function(matches, mpc_f) {

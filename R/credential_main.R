@@ -56,9 +56,12 @@ credential = function(
   #  )
 
   
+  pwms_ac = filterCorrs(pwms_a, peaks_a, an= an, xr = xcmsRaw(an@xcmsSet@filepaths[[1]], profstep = 1), sample = 1)
+  pwms_bc = filterCorrs(pwms_b, peaks_b, an = an, xr = xcmsRaw(an@xcmsSet@filepaths[[2]], profstep = 1), sample = 2)
+  
   #Look for patterns of credentialed natural isotopes
-  pwms_af = buildChargeSupport(pwms_a)
-  pwms_bf = buildChargeSupport(pwms_b)
+  pwms_af = buildChargeSupport(pwms_ac)
+  pwms_bf = buildChargeSupport(pwms_bc)
   
   #Find all putative matches which were replicated aross samples.
   matches = matchAlignsCarbonCharge(aligns, pwms_af, pwms_bf)
