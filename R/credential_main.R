@@ -46,15 +46,6 @@ credential = function(
 
   cat("\nBuilding alignment index between sample A and sample B based on supplied grouping.\n")
   aligns = buildAlignIndex(an@xcmsSet)
-
-  # Possible alternative, manually group and match.  Probably a good idea.
-  #aligns = align(
-  #  peaks_a[has_match_a,,drop=F], 
-  #  peaks_b[has_match_b,,drop=F],
-  #  ppm=30, 
-  #  drt=30
-  #  )
-
   
   pwms_ac = filterCorrs(pwms_a, peaks_a, an= an, xr = xcmsRaw(an@xcmsSet@filepaths[[1]], profstep = 1), sample = 1)
   pwms_bc = filterCorrs(pwms_b, peaks_b, an = an, xr = xcmsRaw(an@xcmsSet@filepaths[[2]], profstep = 1), sample = 2)

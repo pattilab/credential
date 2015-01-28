@@ -80,16 +80,15 @@ pwms = function(
   
   pairwise_matches
 }
-
 filterCorrs = function(pwmsx, peak_table, an, xr, sample) {
-  cat("\nCalculating EIC correlations between putative isotopes:")
+  cat("\nCalculating EIC correlations between putative isotopes:\n")
   rt.raw = an@xcmsSet@rt$raw[[sample]]
   rt.corr = an@xcmsSet@rt$corrected[[sample]]
   
   tmp = llply(names(pwmsx), .progress="text", function(i) {
     pns = unique(pwmsx[[i]][,"peaknum"])
     pn = as.numeric(i)
-    if(length(pns) < 1) {return(pwmsx[[i]][numeric(),,drop=F])}
+    if(length(pns) < 1) {return(pwmsx[[i]])}
     
     peak = peak_table[pn,,drop=F]
     peaks = peak_table[pns,,drop=F]
@@ -107,15 +106,15 @@ filterCorrs = function(pwmsx, peak_table, an, xr, sample) {
     if(length(eic_peak) > 6) {eic_peak = mov_av(eic_peak)}
     
     eic_peaks = alply(peaks, 1, function(x) {
-      temp = unlist(rawEIC(xr, mzrange=x[c("mzmin", "mzmax")], rtrange=c(min, max))$intensity)
+      temp = rawEIC(xr, mzrange=x[c("mzmin", "mzmax")], rtrange=c(min, max))$intensity
       if(length(temp) > 6) {temp = mov_av(temp)}
       temp
-      })
+    })
     
     corrs_peaks = laply(eic_peaks, function(x) {
-      if(length(eic_peak) < 5 || length(x < 5)) {return(1)}
+      if(length(eic_peak) < 5 || length(x) < 5) {return(1)}
       rcorr(eic_peak, x)[[1]][1,2]
-      })
+    })
     
     pns_passed = pns[corrs_peaks > 0.7]
     
@@ -175,34 +174,6 @@ buildChargeSupport = function(
 
   names(pairwise_matches) = names(pwmsx)
   pairwise_matches
-}
-
-align = function (
-  peaks_a, 
-  peaks_b, 
-  ppm, 
-  drt
-  ) {
-  
-  the_rt_index = indexRt(peaks_b, drt)
-  
-  cat("\nWorking on", nrow(peaks_a), "peaks:\n")
-  cross_samp_list = llply(1:nrow(peaks_a), .progress="text", function(i) {
-    a = peaks_a[i,,drop=F]
-                             
-    coeluting = roughlyCoelutingPeakIndices(a$rt, the_rt_index, drt)
-    peaks_b = peaks_b[coeluting, ,drop=F]
-                                               
-    rtdiff = abs(peaks_b$rt - a$rt) < drt
-    ppms = nmInPpm(a$mz, peaks_b$mz, ppm)
-    yn = rtdiff & ppms
-                                                          
-    cbind(peaknum_a = a$peaknum, peaknum_b = peaks_b$peaknum[yn])
-  })
-  
-  hum = as.data.frame(do.call("rbind", cross_samp_list, quote=T), row.names=1:length(cross_samp_list))
-  cat("\nUnique peaknum_a aligns: ", length(unique(hum[,"peaknum_a"])), ". Total aligns: ", nrow(hum))
-  hum
 }
 
 
@@ -371,54 +342,56 @@ filterIsos = function(
   pms
 }
 
+
 addIsoAdd = function(
   mf_s, 
   an
 ) { cat("\nCompiling adduct and isotopic data from CAMERA analysis.\n")
-  pns = mf_s[,"master_peaknum_a"]
-  ns = matrix(NA, nrow = nrow(mf_s), ncol=5, dimnames = list(NULL,c("psg", "cacharge", "carule", "ciso", "ccharge")))
-  
-  iso_add = l_ply(which(!sapply(an@isotopes,is.null)), function(group) {
-    possible_peaks = an@xcmsSet@groupidx[[group]]
-    peaks = possible_peaks[possible_peaks %in% pns]
-    if (length(peaks) < 1) { return(NULL) }
+    pns = mf_s[,"master_peaknum_a"]
+    ns = matrix(NA, nrow = nrow(mf_s), ncol=5, dimnames = list(NULL,c("psg", "cacharge", "carule", "ciso", "ccharge")))
     
-    i = an@isotopes[[group]]
-    
-    n = length(peaks)
-    ns[peaks,
-       c("ciso", "ccharge")
-       ] = c(rep(i$iso,n), rep(i$charge, n))
-    ns <<- ns
+    iso_add = l_ply(which(!sapply(an@isotopes,is.null)), function(group) {
+      possible_peaks = an@xcmsSet@groupidx[[group]]
+      peaks = possible_peaks[possible_peaks %in% pns]
+      if (length(peaks) < 1) { return(NULL) }
+      
+      i = an@isotopes[[group]]
+      
+      n = length(peaks)
+      ns[which(pns %in% peaks),
+         c("ciso", "ccharge")
+         ] = c(rep(i$iso,n), rep(i$charge, n))
+      ns <<- ns
     })
-  
-  add_add = l_ply(which(!sapply(an@derivativeIons,is.null)), function(group) {
-    possible_peaks = an@xcmsSet@groupidx[[group]]
-    peaks = possible_peaks[possible_peaks %in% pns]
-    if (length(peaks) < 1) { return(NULL) }
     
-    d = an@derivativeIons[[group]]
-  
-    n = length(peaks)
-    ns[peaks,
-       c("carule", "cacharge")
-       ] = c(rep(d[[1]]$rule_id, n), rep(d[[1]]$charge, n))
-    ns <<- ns
-  })
-  
-  ps_add = l_ply(1:length(an@pspectra), function(i) {
-    possible_peaks = an@pspectra[[i]]
-    peaks = possible_peaks[possible_peaks %in% pns]
-    if (length(peaks) < 1) { return(NULL) }
+    add_add = l_ply(which(!sapply(an@derivativeIons,is.null)), function(group) {
+      possible_peaks = an@xcmsSet@groupidx[[group]]
+      peaks = possible_peaks[possible_peaks %in% pns]
+      if (length(peaks) < 1) { return(NULL) }
+      
+      d = an@derivativeIons[[group]]
+      
+      n = length(peaks)
+      ns[which(pns %in% peaks),
+         c("carule", "cacharge")
+         ] = c(rep(d[[1]]$rule_id, n), rep(d[[1]]$charge, n))
+      ns <<- ns
+    })
     
-    ns[peaks,
-       c("psg")
-       ] = rep(i, length(peaks))
-    ns <<- ns
-  })
-  
-cbind(mf_s, ns)
+    ps_add = l_ply(1:length(an@pspectra), function(i) {
+      possible_peaks = an@pspectra[[i]]
+      peaks = possible_peaks[possible_peaks %in% pns]
+      if (length(peaks) < 1) { return(NULL) }
+      
+      ns[which(pns %in% peaks),
+         c("psg")
+         ] = rep(i, length(which(pns %in% peaks)))
+      ns <<- ns
+    })
+    
+    cbind(mf_s, ns)
 }
+
 
 removeDuplicatePeakPicks = function(
   mf_p
