@@ -9,13 +9,10 @@ mPeaks = function(
   peak, 
   peaks, 
   ppm_for_isotopes,
-  isotope_rt_delta_s,
   mpc,
   mpc_f
 ) {
   p_rt_diff = abs(peaks[,"rt"] - peak["rt"])
-  peaks = peaks[p_rt_diff < isotope_rt_delta_s, ,drop=F] #First get rid of extra RT peaks to cut down on comparisons
-  
   p_maxo_r = peak["maxo"]/peaks[,"maxo"]
   peaks = cbind(peaks, p_maxo_r = p_maxo_r)
   
@@ -61,17 +58,11 @@ pwms = function(
   mpc,
   mpc_f
 ) {
-  
-  if (class(peak_table) != "matrix") { stop("peak_table not a matrix.") }
-  
-  the_rt_index = indexRt(peak_table, isotope_rt_delta_s)
-  
   cat("\nLooking for pairwise 13C isotopic peak matches within", nrow(peak_table), "peaks:\n")
   pairwise_matches = alply(peak_table, 1, .progress="text", function(peak) {
-    coeluting = roughlyCoelutingPeakIndices(peak["rt"], the_rt_index, isotope_rt_delta_s)
-    peaks = peak_table[coeluting, ,drop=F]
+    peaks = peak_table[abs(peak_table[,"rt"] - peak["rt"]) < isotope_rt_delta_s, ,drop=F]
     
-    mPeaks(peak, peaks, ppm_for_isotopes, isotope_rt_delta_s, mpc, mpc_f)
+    mPeaks(peak, peaks, ppm_for_isotopes, mpc, mpc_f)
 })
   
   count = sum(sapply(pairwise_matches, function(x) { nrow(x) }), na.rm=T)
@@ -80,6 +71,7 @@ pwms = function(
   
   pairwise_matches
 }
+
 filterCorrs = function(pwmsx, peak_table, an, xr, sample) {
   cat("\nCalculating EIC correlations between putative isotopes:\n")
   rt.raw = an@xcmsSet@rt$raw[[sample]]
@@ -90,8 +82,8 @@ filterCorrs = function(pwmsx, peak_table, an, xr, sample) {
     pn = as.numeric(i)
     if(length(pns) < 1) {return(pwmsx[[i]])}
     
-    peak = peak_table[pn,,drop=F]
-    peaks = peak_table[pns,,drop=F]
+    peak = peak_table[peak_table[,"peaknum"] %in% pn,,drop=F]
+    peaks = peak_table[peak_table[,"peaknum"] %in% pns,,drop=F]
     
     min = min(c(peak[,"rtmin"], peaks[,"rtmin"]))
     max = max(c(peak[,"rtmax"], peaks[,"rtmax"]))
