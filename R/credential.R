@@ -11,7 +11,8 @@ credential = function(
   rcorr.lim = 0.7,
   ppm.lim = 2.5,
   mpc.f= 1.1,
-  charges = c(1,2,3,4,5,6)
+  charges = c(1,2,3,4,5,6),
+  g=100
   ) {
   
   # Prepare data
@@ -54,7 +55,8 @@ credential = function(
     rcorr.lim = rcorr.lim,
     rt.lim =   rt.lim,
     mzdiff = mzdiff,
-    charges = charges
+    charges = charges,
+    g=100
     )
   
   iso.b = buildIsoGroups(
@@ -65,7 +67,8 @@ credential = function(
     rcorr.lim = rcorr.lim,
     rt.lim = rt.lim,
     mzdiff = mzdiff,
-    charges = charges
+    charges = charges,
+    g=100
   )
   
   cat("Merging peaks. ")
