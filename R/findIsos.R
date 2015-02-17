@@ -8,7 +8,7 @@ buildIsoGroups = function(
   mzdiff,
   charges,
   g=100
-) { cat("Building isotope groups within a sample. Total: ", nrow(peaks), "\n")
+) { cat("Building isotope groups within a sample. Total: ", nrow(peaks), "\n"); #Misses peaks when they arent within rt.lim of the proper group.  Possible considering centwave's rt method.
     carryover.pns = c()
     last.pn = 0
     isogs = list()
@@ -57,7 +57,7 @@ findIsos = function(
   rt.corr,
   ppm.lim,
   rcorr.lim,
-  mzdiff = aC13 - aC12,
+  mzdiff = atm$c13 - atm$c12,
   charges = c(1,2,3,4,5,6)
 ) { # Takes a data.frame of peaks and returns a list, each entry is a different isotope channel with members assigned to sequences.
   

@@ -56,6 +56,26 @@ credPairs = function(x, ppm.lim, mzdiff, mpc) {
     return(pair) 
   }
   
+  # Find base of seq
+  seq.base = unlist(llply(seq_along(x[,1]), function(i) {
+    y = x[i,]
+    this.seq= which(x[,"seq"] == y[["seq"]])
+    this.cn = cn[,1]
+    z = x[this.seq,,drop=F]
+    
+    c = coefficients(lm(maxo ~ mz, data=z))[["mz"]]
+    if (is.na(c)) {return(T)}
+    if (c < 1) {
+      return(any(i == which(min(this.cn[this.seq]) == this.cn)))
+    }
+    if (c > 1) {
+      return(any(i == which(max(this.cn[this.seq]) == this.cn)))
+    }
+  }))
+  seq.base.aperm = aperm(array(seq.base, dim = rep(length(seq.base),2)),c(2,1))
+  
+  
+  
   # Find seq direction
   seq.dir = ddply(x, "seq", function(y) {
     cbind(seq = y[1,"seq"], dir = coefficients(lm(maxo ~ mz, data=y))[["mz"]])
@@ -66,16 +86,7 @@ credPairs = function(x, ppm.lim, mzdiff, mpc) {
   seq.dir.tf = seq.dir.comp < 0 | is.na(seq.dir.comp)
   
   
-  # Find base of seq
-  seq.base = unlist(alply(x, 1, function(y) {
-    z = subset(x, seq == y[["seq"]])
-    c = coefficients(lm(maxo ~ mz, data=z))[["mz"]]
-    if (is.na(c)) {return(T)}
-    if (c < 1) {return(y["pn.a"] == z[1,"pn.a"])}
-    if (c > 1) {return(z[nrow(z), "pn.a"] == y["pn.a"])}
-  }))
-  seq.base.aperm = aperm(array(seq.base, dim = rep(length(seq.base),2)),c(2,1))
-  
+
   poss.m2 = abs(ppm) < ppm.lim & mpc.tf & seq.base.aperm & seq.base & seq.dir.tf
   if (sum(poss.m2, na.rm=T) < 3) {
     poss = possComb(poss.m2)
@@ -94,9 +105,9 @@ credPairs = function(x, ppm.lim, mzdiff, mpc) {
   }
   
   if (sum(poss.m2, na.rm=T) > 25) { 
-    poss.m2[] = NA; poss = possComb(poss.m2)
+    poss.m2[] = NA; poss = possComb(poss.m2); step=0;
   } else { # Any more and this gets really slow.  Bug.
-    poss = possComb(poss.m2)
+    poss = possComb(poss.m2); step=3;
   }
   carbon.dist = unlist(alply(poss, 1, function(x) {
     t = laply(which(!is.na(x)), function(i) {
@@ -111,11 +122,11 @@ credPairs = function(x, ppm.lim, mzdiff, mpc) {
     c12.g = x[pr$col,"group"], 
     c13.g= x[pr$row,"group"], 
     mpc = mpc.m2[cbind(pr$row,pr$col)], 
-    step=3, 
+    step=0, 
     ppm = ppm[cbind(pr$row,pr$col)], 
     mult = nrow(pr),
-    detected.12 = sum(!is.na(x[pr$col,c("pn.a", "pn.b")])),
-    detected.13 = sum(!is.na(x[pr$row,c("pn.a", "pn.b")]))
+    detected.12 = rowSums(!is.na(x[pr$col,c("pn.a", "pn.b")])),
+    detected.13 = rowSums(!is.na(x[pr$row,c("pn.a", "pn.b")]))
   )
   return(pair)
 }
