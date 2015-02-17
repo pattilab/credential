@@ -56,7 +56,7 @@ credential = function(
     rt.lim =   rt.lim,
     mzdiff = mzdiff,
     charges = charges,
-    g=100
+    g=g
     )
   
   iso.b = buildIsoGroups(
@@ -68,7 +68,7 @@ credential = function(
     rt.lim = rt.lim,
     mzdiff = mzdiff,
     charges = charges,
-    g=100
+    g=g
   )
   
   cat("Merging peaks. ")
