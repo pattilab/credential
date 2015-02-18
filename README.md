@@ -1,6 +1,5 @@
-
-#Credentialed Features
-#Credential metabolomic datasets based on isotopic signatures.
+#Credential
+Credential metabolomic datasets based on isotopic signatures.
 
 ##Reference
 http://pubs.acs.org/doi/abs/10.1021/ac503092d
@@ -23,9 +22,9 @@ credentialed_features = credential(
   an = an,
   r.a = 0.9, # Ratio of sample 1
   r.b = 1.1, # Ratio of sample 2
-  mzdiff = aC13-aC12, # The difference in mass between the enriched and natural abundance species
-  rt.lim = 10, # A rough filter of RT
-  rcorr.lim = 0.7, # The minimum pearson correlation between isotopes
+  mzdiff = atm$c13 - atm$c12, # The difference in mass between the enriched and natural abundance species
+  rt.lim = 10, # A rough filter of RT. Make as large as possible
+  rcorr.lim = 0.7, # The minimum pearson correlation between isotope EICs
   ppm.lim = 2.5, # The ppm limit of isotopes
   mpc.f= 1.1, # A factor by which to expand the mass per carbon limits
   charges = c(1,2,3,4,5,6) # The charge states to consider
@@ -45,11 +44,12 @@ an = xsAnnotate(xs)
 ````
 
 ##Modifications Since Publication
-  - Much has changed.
- 
- ##Modifying The Source
+  - This is version 2.0 of the credentialing software.  The principle of the process is identical but major routines have been rewritten for speed and breadth.
+
+##Modifying The Source
  1. Clone this repo
  2. Modify the source
+ 3. Run:
  ````r
  devtools::load_all("path/to/credential/")
  ````

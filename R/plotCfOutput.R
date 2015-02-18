@@ -2,6 +2,8 @@ plotCfOutput = function(prepath = ".", pwms, pgs.f) {
   peaks = merge(pwms, pgs.f, by.x="c12.g", by.y="group")
   peaks2 = merge(peaks, pgs.f,  by.x="c13.g", by.y="group", suffixes=c(".12", ".13"))
   
+  peaks2.u = peaks2[!duplicated(peaks2[,"isog"]),]
+  
   # Maxo Ratio Plots
   maxo.plots = list(
     ggplot(subset(peaks2, mult>0), aes(x=log10(maxo.a.12/maxo.a.13))) + 
@@ -30,10 +32,9 @@ plotCfOutput = function(prepath = ".", pwms, pgs.f) {
       facet_wrap(~ detected.12, nrow=2) +
       ggtitle("ppm Error from sample A")
     ,
-    ggplot(peaks2, aes(y=ppm, x=log10(mult))) + 
-      geom_point() + 
-      geom_smooth() +
-      ggtitle("ppm Error of peaks which could not be determined")
+    ggplot(peaks2, aes(y=ppm, x=log10(mult), alpha=0.01)) + 
+      geom_point() +
+      ggtitle("ppm Error from sample A versus number of indeterminant peaks.")
   )
   
   sample.plots = llply(sample(pwms[,1], 9), function(x) plotPwms(pwms[x,], pgs.f))
@@ -59,6 +60,10 @@ plotCfOutput = function(prepath = ".", pwms, pgs.f) {
     ggplot(pwms, aes(x=factor(is.na(c12.g)))) +
       geom_bar() +
       ggtitle("IsoGroups without a credentialed isotope.")
+    ,
+    ggplot(peaks2.u, aes(x=factor(charge.12))) +
+      geom_bar() +
+      ggtitle("Charge states detected.")
   )
   
   pdf(paste0(prepath, "/plotCfOutput.pdf"), width=10, height=8) 
