@@ -73,16 +73,19 @@ findIsos = function(
     mzdiff/chg
   }) * cn.m3 + peaks2.m3
   
-  mzd.m2.t = mzd.m2; mzd.m2[lower.tri(mzd.m2, T)] = NA
+  mzd.m2.t = mzd.m2; mzd.m2.t[lower.tri(mzd.m2.t, T)] = NA
   pmz.m3.t = outer(mzd.m2.t, charges, function(mzd, chg) {
     mzdiff/chg
   }) * cn.m3 + peaks2.m3
   
   ppm.m3.t = (pmz.m3.t - peaks.m3) / pmz.m3.t * 1E6
+  ppm.m3 = (pmz.m3 - peaks.m3) / pmz.m3 * 1E6
   
   # Which pairs exist within the mass error tolerance
   isos = which(abs(ppm.m3.t) < ppm.lim, arr.ind=T)
   dimnames(isos) = list(NULL, c("base", "iso", "charge"))
+  
+  if(nrow(isos) < 1) return(list())
 
   # Finding eics of putative matches only once. names(eics) correspond to rownumber of peak or index in peaks$mz
   needed.eics = unique(c(isos[,c("base","iso")]))
