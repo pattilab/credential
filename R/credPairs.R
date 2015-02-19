@@ -38,7 +38,7 @@ formatPair = function(x, mpc.m2, pr, step=1, ppm) {
     c12.g = x[pr[,"col"],"group"], 
     c13.g= x[pr[,"row"],"group"], 
     mpc = mpc.m2[cbind(pr[,"row"],pr[,"col"])], 
-    step=1, 
+    step=step, 
     ppm = ppm[cbind(pr[,"row"],pr[,"col"])], 
     mult = nrow(pr),
     detected.12 = rowSums(!is.na(x[pr[,"col"],c("pn.a", "pn.b")])),

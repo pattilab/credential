@@ -96,9 +96,12 @@ credential = function(
   write.csv(pwms, paste0(prepath,"/pwms.csv"), row.names=F)
   write.csv(pgs.f, paste0(prepath,"/pgs.f.csv"), row.names=F)
   
+  write.csv(iso.a, paste0(prepath,"/iso.a.csv"), row.names=F)
+  write.csv(iso.b, paste0(prepath,"/iso.b.csv"), row.names=F)
+  
   save("an", file=paste0(prepath,"/xsAnnotate.Rdata"))
   save("mpc", file=paste0(prepath,"/mpc.Rdata"))
-  f = as.list(match.call()); write.csv(cbind(names(f), unlist(f)), paste0(prepath,"/arguments.csv"), row.names=F)
+  f = as.list(match.call()); write.csv(cbind(names(f), unlist(f)), paste0(prepath,"/arguments.csv"), row.names=F, col.names=F, sep="\t")
   
   plotCfOutput(prepath = prepath, pwms, pgs.f)
     

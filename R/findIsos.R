@@ -19,7 +19,7 @@ buildIsoGroups = function(
       if ((last.pn+1) >= end) {break;}
       
       p.now = subset(peaks, pn %in% c(peaks[(last.pn+1):end,"pn"], carryover.pns)) 
-      cat(paste0(last.pn, "+", nrow(p.now), ";"))
+      cat(paste0("\rPeak number: ",last.pn, " + ", nrow(p.now), " peaks."))
       if(nrow(p.now) < 1) { next;}
       carryover.pns = p.now[which(abs(p.now[,"rt"] - max(p.now$rt)) < rt.lim), "pn"]
       
