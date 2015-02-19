@@ -49,8 +49,6 @@ buildIsoGroups = function(
     isogs
 }
 
-
-
 findIsos = function(
   peaks,
   xr,
@@ -75,15 +73,20 @@ findIsos = function(
     mzdiff/chg
   }) * cn.m3 + peaks2.m3
   
-  ppm.m3 = (pmz.m3 - peaks.m3) / pmz.m3 * 1E6
+  mzd.m2.t = mzd.m2; mzd.m2[lower.tri(mzd.m2, T)] = NA
+  pmz.m3.t = outer(mzd.m2.t, charges, function(mzd, chg) {
+    mzdiff/chg
+  }) * cn.m3 + peaks2.m3
+  
+  ppm.m3.t = (pmz.m3.t - peaks.m3) / pmz.m3.t * 1E6
   
   # Which pairs exist within the mass error tolerance
-  isos = which(abs(ppm.m3) < ppm.lim, arr.ind=T)
+  isos = which(abs(ppm.m3.t) < ppm.lim, arr.ind=T)
   dimnames(isos) = list(NULL, c("base", "iso", "charge"))
 
   # Finding eics of putative matches only once. names(eics) correspond to rownumber of peak or index in peaks$mz
-  needed.eics = unique(as.vector(isos[,c("base","iso")]))
-  eics.l = llply(needed.eics, function(x) nmEIC.rt(data.frame(peaks[x,,drop=F]), xr, rt.corr))
+  needed.eics = unique(c(isos[,c("base","iso")]))
+  eics.l = llply(needed.eics, function(x) nmEIC.rt(peaks[x,], xr, rt.corr))
   
   scans = unlist(llply(eics.l, function(x) x[,"scan"]))
   scan.min = min(scans)
@@ -92,51 +95,37 @@ findIsos = function(
   
   for(i in seq_along(eics.l)) {
     eic = eics.l[[i]]
-    eic.mat[eic$scan-scan.min+1, as.character(i)] = eic$int
+    eic.mat[eic[,"scan"]-scan.min+1, i] = eic[,"intensity"]
   }
   
   #Finding corr between putative matches
-  eic.corr = ddply(data.frame(isos), c("base", "iso"), function(x) {
-    eic.merge = eic.mat[,as.character(x[1,c("base", "iso")])]
-    if (nrow(eic.merge) < 5) {return(data.frame(rcorr = 0))}
-    data.frame(rcorr = rcorr(eic.merge[,1], eic.merge[,2])$r[1,2])
-  })
+  rcorr.mat = rcorr(eic.mat)$r
+  foo = isos[,c("base","iso")]; foo[] = as.character(foo)
+  eic.corr = cbind(isos, rcorr = rcorr.mat[foo])
   
-  #Convert this 3 column df into an array conformable with ppm.m3
-  missing.base = which(!(1:length(peaks$mz) %in% eic.corr$base))
-  missing.iso = which(!(1:length(peaks$mz) %in% eic.corr$iso))
-  if (length(missing.base) > 0 & length(missing.iso) > 0) eic.corr = rbind(eic.corr, cbind(base = missing.base, iso=missing.iso, rcorr=NA))
-  rcorr.m2 = acast(eic.corr, base~iso, value.var="rcorr", fill=NA)
-  rcorr.m3 = outer(rcorr.m2, rep(T, length(charges), "&"))
+  rcorr.m2 = mzd.m2; rcorr.m2[] = NA
+  rcorr.m2[eic.corr[,c("base","iso")]] = eic.corr[,"rcorr"]
   
   #Determine charge state and iso packets
   # Remove cn of all disqualified peaks
-  not.isos = which(abs(ppm.m3) > ppm.lim | rcorr.m3 < rcorr.lim)
-  cn.isos = cn.m3
-  cn.isos[not.isos] = NA
+  not.isos = which(abs(ppm.m3) > ppm.lim | c(rcorr.m2 < rcorr.lim))
+  cn.isos = cn.m3; cn.isos[not.isos] = NA
   
   #Find 1C spacing series
-  cn.spacings = aaply(cn.isos, c(2,3), function(x) {
-    c(NA,diff(x[order(x)]))
-  })
-  sequential.n = aaply(cn.spacings, c(1,2), function(x) {
-    sum(x==1,na.rm=T)
+  sequential.n = aaply(cn.isos, c(2,3), function(x) {
+    cns = unique(x)
+    sum(outer(cns, cns, "-") == 1, na.rm=T)
   })
   
   #Pick best charge state or 1 temporarily to define groupings
-  #possible.isos = !is.na(cn.isos)
-  #has.iso = aaply(possible.isos, c(1), any)
   best.charge = aaply(sequential.n, 1, function(x) { order(x, decreasing=T)[1] })
   
   ppm.m3.b.m2 = aaply(1:dim(ppm.m3)[2], 1, function(i) {
     ppm.m3[i,,best.charge[[i]]]
   })
-  rcorr.m3.b.m2 = aaply(1:dim(rcorr.m3)[2], 1, function(i) {
-    rcorr.m3[i,,best.charge[[i]]]
-  })
   
   # partition isotope groups
-  isos2 = which(abs(ppm.m3.b.m2) < ppm.lim & rcorr.m3.b.m2 > rcorr.lim, arr.ind=T)
+  isos2 = which(abs(ppm.m3.b.m2) < ppm.lim & rcorr.m2 > rcorr.lim, arr.ind=T)
   dimnames(isos2) = list(NULL, c("base", "iso"))
   isos2 = subset(data.frame(isos2), base != iso)
   
@@ -155,7 +144,7 @@ findIsos = function(
   
   # Choose best charge state based on other groups.
   best.charge.g = laply(iso.groups, function(x) {
-    order(aaply(sequential.n[x,], 2, sum), decreasing=T)[1]
+    order(colSums(sequential.n), decreasing=T)[1]
   })
   
   # With charge state specified and isotope group assigned we can find sequences.

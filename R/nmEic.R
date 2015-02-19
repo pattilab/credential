@@ -13,10 +13,7 @@ nmEIC.an = function(pn, an, xr.l) {
 }
 
 nmEIC.rt = function(peak, xr, rt.corr) {# Peak has rtmin, rtmax, mzmin, mzmax
-  sc.range = c(order(abs(rt.corr-min(peak["rtmin"])), decreasing=F)[1],
-               order(abs(rt.corr-max(peak["rtmax"])), decreasing=F)[1])
+  sc.range = c(which.min(abs(rt.corr - peak[["rtmin"]])), which.min(abs(rt.corr - peak[["rtmax"]])))
   
-  eic = rawEIC(xr, mzrange=peak[c("mzmin", "mzmax")], scanrange=sc.range)$intensity
-  eic.r = cbind(scan = sc.range[1]:sc.range[length(sc.range)], int = eic, pn = peak[["pn"]])
-  data.frame(eic.r)
+  do.call("cbind", rawEIC(xr, mzrange=peak[c("mzmin", "mzmax")], scanrange=sc.range))
 }
