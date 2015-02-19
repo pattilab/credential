@@ -67,7 +67,7 @@ findIsos = function(
   
   #Pairwise differences and carbon number calculation
   mzd.m2 = outer(peaks$mz, peaks$mz, "-")
-  mzd.m2[lower.tri(mzd.m2, T)] = NA
+  mzd.m2[lower.tri(mzd.m2, F)] = NA
   cn.m3 = outer(mzd.m2, charges, function(mzd, chg) {
     round(mzd * chg / mzdiff)
   })
@@ -80,32 +80,33 @@ findIsos = function(
   # Which pairs exist within the mass error tolerance
   isos = which(abs(ppm.m3) < ppm.lim, arr.ind=T)
   dimnames(isos) = list(NULL, c("base", "iso", "charge"))
-  
+
   # Finding eics of putative matches only once. names(eics) correspond to rownumber of peak or index in peaks$mz
   needed.eics = unique(as.vector(isos[,c("base","iso")]))
-  needed.peaks = llply(needed.eics, function(x) {
-    data.frame(peaks[x,,drop=F])
-  })
-  eics = llply(needed.peaks, nmEIC.rt, xr, rt.corr)
-  names(eics) = needed.eics
+  eics.l = llply(needed.eics, function(x) nmEIC.rt(data.frame(peaks[x,,drop=F]), xr, rt.corr))
+  
+  scans = unlist(llply(eics.l, function(x) x[,"scan"]))
+  scan.min = min(scans)
+  scan.max = max(scans)
+  eic.mat = matrix(NA, ncol=length(needed.eics), nrow=scan.max-scan.min+1, dimnames=list(NULL, as.character(needed.eics)))
+  
+  for(i in seq_along(eics.l)) {
+    eic = eics.l[[i]]
+    eic.mat[eic$scan-scan.min+1, as.character(i)] = eic$int
+  }
   
   #Finding corr between putative matches
-  isos.d = data.frame(isos)
-  eic.corr = ddply(isos.d, c("base", "iso"), function(x) {
-    eic.merge = merge(eics[[as.character(x[1,"base"])]][,c("scan", "int")], 
-                      eics[[as.character(x[1,"iso"])]][,c("scan", "int")], by="scan", all=T)
+  eic.corr = ddply(data.frame(isos), c("base", "iso"), function(x) {
+    eic.merge = eic.mat[,as.character(x[1,c("base", "iso")])]
     if (nrow(eic.merge) < 5) {return(data.frame(rcorr = 0))}
-    data.frame(rcorr = rcorr(eic.merge[,2], eic.merge[,3])$r[1,2])
+    data.frame(rcorr = rcorr(eic.merge[,1], eic.merge[,2])$r[1,2])
   })
   
   #Convert this 3 column df into an array conformable with ppm.m3
   missing.base = which(!(1:length(peaks$mz) %in% eic.corr$base))
   missing.iso = which(!(1:length(peaks$mz) %in% eic.corr$iso))
-  
-  rcorr.m2 = acast(rbind(
-    eic.corr, 
-    cbind(base = missing.base, iso=missing.iso, rcorr=NA)
-  ), base~iso, value.var="rcorr", fill=NA)
+  if (length(missing.base) > 0 & length(missing.iso) > 0) eic.corr = rbind(eic.corr, cbind(base = missing.base, iso=missing.iso, rcorr=NA))
+  rcorr.m2 = acast(eic.corr, base~iso, value.var="rcorr", fill=NA)
   rcorr.m3 = outer(rcorr.m2, rep(T, length(charges), "&"))
   
   #Determine charge state and iso packets
@@ -137,8 +138,9 @@ findIsos = function(
   # partition isotope groups
   isos2 = which(abs(ppm.m3.b.m2) < ppm.lim & rcorr.m3.b.m2 > rcorr.lim, arr.ind=T)
   dimnames(isos2) = list(NULL, c("base", "iso"))
+  isos2 = subset(data.frame(isos2), base != iso)
   
-  toag = unique(as.vector(isos2))
+  toag = unique(unlist(isos2))
   iso.groups = list()
   for (ag in toag) {
     if(ag %in% unlist(iso.groups)) { next; }
