@@ -7,21 +7,24 @@ buildIsoGroups = function(
   rt.lim,
   mzdiff,
   charges,
-  g=100
-) { cat("Building isotope groups within a sample. Total: ", nrow(peaks), "\n"); #Misses peaks when they arent within rt.lim of the proper group.  Possible considering centwave's rt method.
+  g=500
+) { cat("\nBuilding isotope groups within a sample. Total: ", nrow(peaks), "\n"); #Misses peaks when they arent within rt.lim of the proper group.  Possible considering centwave's rt method.
     carryover.pns = c()
     last.pn = 0
     isogs = list()
     
+    peaks = peaks[order(peaks[,"rt"]),]
+    peaks = cbind(peaks, index=seq(peaks[,1]))
+    
     repeat {
       end = last.pn+g
-      if (end > nrow(peaks)) {end = nrow(peaks)}
+      if (end > max(peaks[,"index"])) {end = max(peaks[,"index"])}
       if ((last.pn+1) >= end) {break;}
       
-      p.now = subset(peaks, pn %in% c(peaks[(last.pn+1):end,"pn"], carryover.pns)) 
+      p.now = subset(peaks, index %in% c((last.pn+1):end, carryover.pns)) 
       cat(paste0("\rPeak number: ",last.pn, " + ", nrow(p.now), " peaks."))
       if(nrow(p.now) < 1) { next;}
-      carryover.pns = p.now[which(abs(p.now[,"rt"] - max(p.now$rt)) < rt.lim), "pn"]
+      carryover.pns = p.now[which(abs(p.now[,"rt"] - max(p.now$rt)) < rt.lim), "index"]
       
       isogs.now = findIsos(
         peaks = p.now,
@@ -33,19 +36,25 @@ buildIsoGroups = function(
         charges = charges
       )
       
-      co.g = laply(isogs.now, function(x) {
-        any(carryover.pns %in% x[,"pn"])
-      })
-      more.co = unlist(llply(isogs.now[which(co.g)], function(x) x[,"pn"]))
-      carryover.pns = unique(c(carryover.pns, more.co))
+      co.gs = llply(isogs.now, function(x) {
+        subset(peaks, pn %in% x[,"pn"], index, drop=T)
+        })
+      co.gs.any = unlist(llply(co.gs, function(x) {
+        any(x %in% carryover.pns)
+        }))
       
+      carryover.pns = unique(c(carryover.pns, unlist(co.gs[co.gs.any])))
+      
+      isogs.trimmed = isogs.now[which(co.gs.any)]
       isogs = c(
         isogs, 
-        isogs.now[-which(co.g)]
+        isogs.now[-which(co.gs.any)]
       )
       
       last.pn = end;
     }
+
+    isogs = c(isogs, isogs.trimmed)
     isogs
 }
 
