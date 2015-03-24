@@ -17,3 +17,9 @@ nmEIC.rt = function(peak, xr, rt.corr) {# Peak has rtmin, rtmax, mzmin, mzmax
   
   do.call("cbind", rawEIC(xr, mzrange=peak[c("mzmin", "mzmax")], scanrange=sc.range))
 }
+
+nmEIC.rt = function(peak, xr, rt.corr) {# Peak has rtmin, rtmax, mzmin, mzmax
+  sc.range = c(which.min(abs(rt.corr - peak[["rtmin"]])), which.min(abs(rt.corr - peak[["rtmax"]])))
+  
+  do.call("cbind", rawEIC(xr, mzrange=peak[c("mzmin", "mzmax")], scanrange=sc.range))
+}

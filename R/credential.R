@@ -12,7 +12,8 @@ credential = function(
   ppm.lim = 2.5,
   mpc.f= 1.1,
   charges = c(1,2,3,4,5,6),
-  g=100
+  g=100,
+  xr.l = NULL
   ) {
   
   # Prepare data
@@ -24,9 +25,14 @@ credential = function(
   mpc = within(mpc, min_mpc <- min_mpc / mpc.f)
   mpc = within(mpc, max_mpc <- max_mpc * mpc.f)
   
-  cat("Loading raw files. ")
-  xr.a = xcmsRaw(an@xcmsSet@filepaths[1], profstep = 10)
-  xr.b = xcmsRaw(an@xcmsSet@filepaths[2], profstep = 10)
+  if (is.null(xr.l)) {
+    cat("Loading raw files. ")
+    xr.a = xcmsRaw(an@xcmsSet@filepaths[1], profstep = 0)
+    xr.b = xcmsRaw(an@xcmsSet@filepaths[2], profstep = 0)
+  } else {
+    xr.a = xr.l[[1]]
+    xr.b = xr.l[[2]]
+  }
   
   p = an@xcmsSet@peaks
   
@@ -71,7 +77,7 @@ credential = function(
     g=g
   )
   
-  cat("Merging peaks. ")
+  cat("\nMerging peaks. ")
   riso.g = replicatedGroups(an, iso.a, iso.b) # Based on supplied grouping in an@xs@groupidx
   cam.g = compileCamera(riso.g$group, an)
   
@@ -82,11 +88,12 @@ credential = function(
   pgs.f = within(peak.gs.ab, mz <- mergeValues(mz.a,mz.b))
   pgs.f = within(pgs.f, maxo <- mergeValues(maxo.a,maxo.b))
   
-  cat("Finding pairs of credentialed (U12-U13) peaks in the ", length(unique(pgs.f[,"isog"]))," isotope groups. \n")
+  cat("\nFinding pairs of credentialed (U12-U13) peaks in the ", length(unique(pgs.f[,"isog"]))," isotope groups. \n")
   pwms = ddply(pgs.f, "isog", .progress="text", function(x) {
     credPairs(x, ppm.lim, mzdiff, mpc)
     })
-
+  
+  cfs = subset(pwms, mult > 0)
   
   # Save results
   cat("Saving results. ")
@@ -96,8 +103,8 @@ credential = function(
   write.csv(pwms, paste0(prepath,"/pwms.csv"), row.names=F)
   write.csv(pgs.f, paste0(prepath,"/pgs.f.csv"), row.names=F)
   
-  write.csv(iso.a, paste0(prepath,"/iso.a.csv"), row.names=F)
-  write.csv(iso.b, paste0(prepath,"/iso.b.csv"), row.names=F)
+  save("iso.a", file=paste0(prepath,"/iso.a.RData"))
+  save("iso.b", file=paste0(prepath,"/iso.b.RData"))
   
   save("an", file=paste0(prepath,"/xsAnnotate.Rdata"))
   save("mpc", file=paste0(prepath,"/mpc.Rdata"))
@@ -105,5 +112,5 @@ credential = function(
   
   plotCfOutput(prepath = prepath, pwms, pgs.f)
     
-  return(pwms)
+  return(cfs)
 }

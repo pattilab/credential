@@ -37,7 +37,8 @@ plotCfOutput = function(prepath = ".", pwms, pgs.f) {
       ggtitle("ppm Error from sample A versus number of indeterminant peaks.")
   )
   
-  sample.plots = llply(sample(pwms[,1], 9), function(x) plotPwms(pwms[x,], pgs.f))
+  sample.plots = llply(sample(pwms[,1], 16), function(x) plotPwms(pwms[x,], pgs.f))
+  sample.plots2 = llply(sample(pwms[,1], 16), function(x) plotPwms(pwms[x,], pgs.f))
   do.call("grid.arrange", sample.plots)
 
   qc.plots = list(
@@ -66,12 +67,13 @@ plotCfOutput = function(prepath = ".", pwms, pgs.f) {
       ggtitle("Charge states detected.")
   )
   
-  pdf(paste0(prepath, "/plotCfOutput.pdf"), width=10, height=8) 
+  pdf(paste0(prepath, "/plotCfOutput.pdf"), width=13, height=13) 
   {
     do.call("grid.arrange", qc.plots)
     do.call("grid.arrange", maxo.plots)
     do.call("grid.arrange", ppm.plots)
     do.call("grid.arrange", sample.plots)
+    do.call("grid.arrange", sample.plots2)
   } 
   dev.off()
 
@@ -84,7 +86,7 @@ plotPwms = function(pwms.1 = pwms[sample(pwms[,1],1),], pgs.f = pgs.f2) {
   isog = subset(data.frame(pgs.f), isog %in% pwms.1[,"isog"])
   pair = subset(data.frame(isog), group %in% pwms.1["c12.g"] | group %in% pwms.1["c13.g"])
 
-  if(any(is.na(pwms.1))) {
+  if(any(is.na(pwms.1[,c("c12.g", "c13.g")]))) {
     p = ggplot(data.frame(isog), aes(x = mz, xend=mz, yend=0, y= maxo, colour=factor(seq))) + 
       geom_segment() +
       theme(legend.position="none") +
