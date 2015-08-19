@@ -24,7 +24,7 @@ buildIsoGroups = function(
       p.now = subset(peaks, index %in% c((last.pn+1):end, carryover.pns)) 
       cat(paste0("\rPeak number: ",last.pn, " + ", nrow(p.now), " peaks."))
       if(nrow(p.now) < 1) { next;}
-      carryover.pns = p.now[which(abs(p.now[,"rt"] - max(p.now$rt)) < rt.lim), "index"]
+      carryover.pns = p.now[which(abs(p.now$rt - max(p.now$rt)) < rt.lim), "index"]
       
       isogs.now = findIsos(
         peaks = p.now,
@@ -39,9 +39,9 @@ buildIsoGroups = function(
       co.gs = llply(isogs.now, function(x) {
         subset(peaks, pn %in% x[,"pn"], index, drop=T)
         })
-      co.gs.any = unlist(llply(co.gs, function(x) {
+      co.gs.any = c(unlist(llply(co.gs, function(x) {
         any(x %in% carryover.pns)
-        }))
+        })), F)
       
       carryover.pns = unique(c(carryover.pns, unlist(co.gs[co.gs.any])))
       
