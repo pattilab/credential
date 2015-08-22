@@ -15,8 +15,8 @@ possComb = function(poss) {
 
 testRow = function(x) {
   x = matrix(x, nrow=1)
-  if(any(count(na.omit(unlist(x)))[,"freq"] > 1)) return(NULL)
-  if(any(count(na.omit(unlist(possToI(x))))[,"freq"] > 1)) return(NULL)
+  if(any(plyr::count(c(na.omit(unlist(x))))[,"freq"] > 1)) return(NULL)
+  if(any(plyr::count(c(na.omit(unlist(possToI(x)))))[,"freq"] > 1)) return(NULL)
   return(x)
 }
 
