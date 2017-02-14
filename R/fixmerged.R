@@ -19,6 +19,21 @@ checkmerged = function(knot) {
   else return(rep(1, nrow(knot)))
 }
 
+calcdir = function(ps) {
+  ps = subset(ps, tail == F)
+  
+  f = tail(seq_len(nrow(ps)), n=3)
+  b = head(seq_len(nrow(ps)), n=3)
+  
+  ds = c(
+    mean(diff(ps$i[order(ps$mz)][f]))/max(ps$i),
+    mean(diff(ps$i[order(ps$mz)][b]))/max(ps$i)
+  )
+  
+  val = ds[which.max(abs(ds))]
+  if (length(val) < 1) return(as.numeric(NA))
+  val
+}
 
 knotstats = function(knot) {
   
@@ -32,7 +47,7 @@ knotstats = function(knot) {
     maxi = max(knot$i),
     n = nrow(knot),
     z = knot$z[1],
-    dir = mean(diff(knot$i[o]))/max(knot$i[o])
+    dir = calcdir(knot[,.(mz, i, tail)])
   )
 }
 
@@ -42,12 +57,15 @@ fixmergedquipu = function(Knot, features) {
   merged = Knot$cc_knot[features,,on="cc", nomatch=0][,merged := checkmerged(.SD), by="knot"][,.(cc,merged)]
   Knot$cc_knot[merged,merged := merged,on="cc"]
   
-  Knot$cc_knot[,':='(knot=as.integer(factor(paste(knot, merged))), merged = NULL)]
+  temp = Knot$knot[Knot$cc_knot,,on="knot"]
   
+  temp[,':='(knot=as.integer(factor(paste(knot, merged))), merged = NULL)]
   
-  knot_new = features[Knot$cc_knot[Knot$knot,,on="knot",nomatch=0],,on="cc", nomatch = 0][,knotstats(.SD),by="knot"]
+  knot_new = features[,.(mz, i, rt, cc)][temp,,on="cc", nomatch = 0][,knotstats(.SD),by="knot"]
   
   Knot$knot = knot_new
+  
+  Knot$cc_knot = temp[,.(cc, knot, tail)]
   
   Knot
 }

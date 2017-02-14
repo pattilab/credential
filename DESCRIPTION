@@ -8,8 +8,11 @@ Maintainer: Nathaniel Guy Mahieu <nathaniel.mahieu@wustl.edu>
 Description: Credentialing searches for U12C-U13C feature pairs in labeled metabolomic data.
 License: 
 Depends: 
-  R (>= 3.1.0)
-Imports:
+  R (>= 3.1.0),
+  igraph,
+  magrittr,
   matrixStats
+Imports:
+  sn
 Suggests:
   ggplot2
