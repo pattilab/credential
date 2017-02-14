@@ -1,7 +1,7 @@
 credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, ratio.lim, maxdimer, cd, do.plot, scales) {
   #cat("\rWorking on knots:", knots$knot, "                                                      ")
   
-
+  
   knots[z==0, z:=max(knots$z)]
   
   # Split up peaks if possible
@@ -103,7 +103,7 @@ credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, rati
     #gscore (ints), dscore (mz, rt), cnums (carbon number), mpctf, direction
     cs = cs[,mpctf & dirtf,drop = F]
     scores = rbind(gscore, dscore, cnums = c(cnums))[,mpctf&dirtf,drop=F]
-
+    
     if (do.plot) plot(scores[1:2,,drop=F] %>% aperm, xlim = c(0, 4), ylim = c(0,4))
     
     
@@ -147,7 +147,7 @@ credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, rati
 #' 
 #' @return list A list with values "knot_quipu" and "quipu".  \code{knot_quipu} assigns feature knots to quipu - credentialed groups. \code{quipu} contains aggregate information about each credentialed group.
 #'
-credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), ratio = 1/1, ratio.lim = 0.1, maxnmer = 4, cd = 13.00335-12) {
+credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), ratio = 1/1, ratio.lim = 0.1, maxnmer = 4, cd = 13.00335-12, .zs = 1:4) {
   cat("\nCredentialing within", length(unique(Knots$knot)), "supplied knots.")
   factor = 1
   maxdimer = maxnmer
@@ -164,7 +164,7 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), ratio
   
   Knot[,rrtg := as.integer(factor(paste(do.call(paste, .SD)))), .SDcols = gcols]
   Knot[,(gcols) := NULL]
-
+  
   cat("\nWorking with supported charge states.")
   Knot_quipu = copy(Knot[,.(knot)])
   for (.rrtg in unique(Knot[z>0]$rrtg)) {
@@ -174,7 +174,7 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), ratio
   cat("\rWorking with supported charge states.", "Found", length(unique(Knot_quipu$q)), "credentialed knots.")
   lastn = length(unique(Knot_quipu$q))
   
-  for (.z in unique(Knot$z)) {
+  for (.z in unique(c(Knot$z, .zs))) {
     cat("\nWorking with unsupported charge state:", .z)
     lastn = length(unique(Knot_quipu$q))
     if (.z == 0) next
@@ -183,6 +183,7 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), ratio
     for (.gtemp in unique(subknots$gtemp)) {
       knots = subknots[gtemp == .gtemp]
       knots[,meanr := meanmz %/% (cd/.z)]
+      knots[1,z:=.z]
       credential(knots, Knot_quipu, ppmwid = ppmwid, rtwid = rtwid, factor = factor, mpc = mpc, ratio = ratio, ratio.lim = ratio.lim, maxdimer = maxdimer, cd = cd, do.plot = do.plot,scales = scales)
     }
     
