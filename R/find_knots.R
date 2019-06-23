@@ -5,7 +5,7 @@
 #' @param ppmwid numeric The maximum mass error in ppm.
 #' @param rtwid numeric The maximum retention time difference in seconds.
 #' @param cd numeric The mass spacing to search for (defaults to C13 - C12)
-#' 
+#' @import igraph magrittr
 #'
 #' @return list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
 #'
@@ -44,9 +44,9 @@ findzknots = function(features, .z=1, ppmwid=5, rtwid = 1, cd = 13.00335-12) {
 #' @param ppmwid numeric The maximum mass error in ppm.
 #' @param rtwid numeric The maximum retention time difference in seconds.
 #' @param cd numeric The mass spacing to search for (defaults to C13 - C12)
-#' @param minlength Integer. If an ROI is shorter than this it is discarded.
+   #@param minlength Integer. If an ROI is shorter than this it is discarded.
 #'
-#' @seealso \link{\code{findzknots}}
+#' @seealso \code{\link{findzknots}}
 #' 
 #' @return list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
 #'

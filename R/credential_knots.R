@@ -11,7 +11,7 @@ credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, rati
   knots[is.na(direction),direction:=0]
   dirworks = outer(knots$direction, knots$direction, "<") | outer(knots$direction, knots$direction) == 0
   
-  intsanity = outer(knots$maxi, knots$maxi, "/") %>% { . < 1/ratio.lim & . > ratio.lim}
+  intsanity = outer(knots$maxi, knots$maxi, "/") %>% { . < ratio/ratio.lim & . > ratio*ratio.lim}
   
   poss = which(withinmpc & dirworks & intsanity, arr.ind = T)
   
@@ -141,9 +141,10 @@ credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, rati
 #' @param ratio numeric The ratio of U12C/U13C.
 #' @param ratio.lim numeric The maximum deviation from that ratio.
 #' @param maxnmer integer The biggest n-mer to search for.
+#' @param .zs integer The charge states to search for.
 #' @param cd numeric The mass spacing to search for (defaults to C13 - C12)
-#' 
-#' @seealso \link{\code{findknots}}
+#' @import igraph magrittr stats
+#' @seealso \code{\link{findknots}}
 #' 
 #' @return list A list with values "knot_quipu" and "quipu".  \code{knot_quipu} assigns feature knots to quipu - credentialed groups. \code{quipu} contains aggregate information about each credentialed group.
 #'
