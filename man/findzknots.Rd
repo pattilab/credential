@@ -4,7 +4,8 @@
 \alias{findzknots}
 \title{Find knots - sets of features with defined spacing and retention time.}
 \usage{
-findzknots(features, .z = 1, ppmwid = 5, rtwid = 1, cd = 13.00335 - 12)
+findzknots(features, .z = 1, ppmwid = 5, rtwid = 1, cd = 13.00335 -
+  12)
 }
 \arguments{
 \item{features}{data.frame Rows are features. Columns are "cc"}

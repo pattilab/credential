@@ -4,9 +4,12 @@
 \alias{findknots}
 \title{Find knots and resolve charge state}
 \usage{
-findknots(Cc.in, .zs = 1:4, ppmwid = 4, rtwid = 1, cd = 13.00335 - 12)
+findknots(features, .zs = 1:4, ppmwid = 4, rtwid = 1, cd = 13.00335
+  - 12)
 }
 \arguments{
+\item{features}{data.frame Rows are features. Columns are "cc"}
+
 \item{.zs}{integer A vector containing the absolute value of the possible charges.}
 
 \item{ppmwid}{numeric The maximum mass error in ppm.}
@@ -14,10 +17,6 @@ findknots(Cc.in, .zs = 1:4, ppmwid = 4, rtwid = 1, cd = 13.00335 - 12)
 \item{rtwid}{numeric The maximum retention time difference in seconds.}
 
 \item{cd}{numeric The mass spacing to search for (defaults to C13 - C12)}
-
-\item{features}{data.frame Rows are features. Columns are "cc"}
-
-\item{minlength}{Integer. If an ROI is shorter than this it is discarded.}
 }
 \value{
 list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
@@ -26,5 +25,5 @@ list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the featu
 Find knots and resolve charge state
 }
 \seealso{
-\link{\code{findzknots}}
+\code{\link{findzknots}}
 }

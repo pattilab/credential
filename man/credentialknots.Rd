@@ -5,7 +5,7 @@
 \title{Heuristic search for knots which satisfy credentialing filters}
 \usage{
 credentialknots(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120),
-  ratio = 1/1, ratio.lim = 0.1, maxnmer = 4, cd = 13.00335 - 12,
+  Ratio = 1/1, Ratio.lim = 0.1, maxnmer = 4, cd = 13.00335 - 12,
   .zs = 1:4)
 }
 \arguments{
@@ -17,13 +17,15 @@ credentialknots(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120),
 
 \item{mpc}{numeric Vector containing the minimum and maximum allowable mass per carbon.}
 
-\item{ratio}{numeric The ratio of U12C/U13C.}
+\item{Ratio}{numeric The ratio of U12C/U13C.}
 
-\item{ratio.lim}{numeric The maximum deviation from that ratio.}
+\item{Ratio.lim}{numeric The maximum deviation from that ratio.}
 
 \item{maxnmer}{integer The biggest n-mer to search for.}
 
 \item{cd}{numeric The mass spacing to search for (defaults to C13 - C12)}
+
+\item{.zs}{integer The charge states to search for.}
 }
 \value{
 list A list with values "knot_quipu" and "quipu".  \code{knot_quipu} assigns feature knots to quipu - credentialed groups. \code{quipu} contains aggregate information about each credentialed group.
@@ -32,5 +34,5 @@ list A list with values "knot_quipu" and "quipu".  \code{knot_quipu} assigns fea
 Heuristic search for knots which satisfy credentialing filters
 }
 \seealso{
-\link{\code{findknots}}
+\code{\link{findknots}}
 }

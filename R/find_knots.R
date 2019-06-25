@@ -50,9 +50,9 @@ findzknots = function(features, .z=1, ppmwid=5, rtwid = 1, cd = 13.00335-12) {
 #' 
 #' @return list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
 #'
-findknots = function(Cc.in, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) { # Should search for and return isotope knots (including z with one knot per peak) representing individual compounds
+findknots = function(features, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) { # Should search for and return isotope knots (including z with one knot per peak) representing individual compounds
   factor = 1
-  Cc = copy(Cc.in)
+  Cc = copy(features)
   
   # Find putative knots in various charge states
   zknots = lapply(.zs, function(.z) {
@@ -110,7 +110,7 @@ findknots = function(Cc.in, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) { # 
   
   
   #Aggregate
-  c13. = temp[,.(meanr = mean(mz %% (cd/z)), meanmz = mean(mz), mainmz = mz[which.max(i)], rt = mean(rt), maxi=max(i),  n = length(mz), dir = calcdir(data.frame(mz, i, tail)), z= z[1]),by=c13]
+  c13. = temp[,.(meanr = mean(mz %% (cd/z)), meanmz = mean(mz), basemz = min(mz), mainmz = mz[which.max(i)], rt = mean(rt), maxi=max(i),  n = length(mz), dir = calcdir(data.frame(mz, i, tail)), z= z[1]),by=c13]
   c13.[n==1, z := 0]
   c13 = temp[,.(cc, c13, tail)]
   

@@ -42,6 +42,7 @@ knotstats = function(knot) {
   data.frame(
     meanr = mean(knot$mz %% (13.00335-12)),
     meanmz = mean(knot$mz),
+    basemz = min(knot$mz),
     mainmz = knot$mz[which.max(knot$i)],
     rt = mean(knot$rt),
     maxi = max(knot$i),
