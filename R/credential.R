@@ -125,9 +125,11 @@ filterMpc = function(matches, mpc_f) {
   minmpc = mpc[matches[, "p_carbons_a"],"min_mpc"]/mpc_f
   maxmpc = mpc[matches[, "p_carbons_a"],"max_mpc"]*mpc_f
 
-  foo = matches[
-    (matches[,"p_mpc_a"] < maxmpc & matches[,"p_mpc_a"] > minmpc)
-    ,,drop=F]
+  //foo = matches[
+  //  (matches[,"p_mpc_a"] < maxmpc & matches[,"p_mpc_a"] > minmpc)
+  //  ,,drop=F]
+  idx = which(matches[,"p_mpc_a"] < maxmpc & matches[,"p_mpc_a"] > minmpc)
+  foo = matches[idx,]
 }
 
 #Looks for credentialed features which are a series of 1 carbon spacings.  This indicates natural abundance isotopes and the more isotopes found the more likely we have identified the correct charge state.
