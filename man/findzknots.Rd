@@ -2,25 +2,27 @@
 % Please edit documentation in R/find_knots.R
 \name{findzknots}
 \alias{findzknots}
-\title{Find knots - sets of features with defined spacing and retention time.}
+\title{Core function of findknots(): Searching knots at charge state z}
 \usage{
-findzknots(features, .z = 1, ppmwid = 5, rtwid = 1, cd = 13.00335 -
-  12)
+findzknots(features, .z=1, ppmwid=5, rtwid = 1, cd = 13.00335-12)
 }
 \arguments{
-\item{features}{data.frame Rows are features. Columns are "cc"}
+\item{features}{data.table A feature table including at least four exclusive columns: "cc", "mz", "rt" and "i". Each row is a feature (peak).}
 
-\item{.z}{integer Charge state to assume}
+\item{.z}{integer Charge state of the features.}
 
-\item{ppmwid}{numeric The maximum mass error in ppm.}
+\item{ppmwid}{numeric Mass error tolerance in ppm.}
 
-\item{rtwid}{numeric The maximum retention time difference in seconds.}
+\item{rtwid}{numeric The maximum retention time difference allowed in seconds.}
 
-\item{cd}{numeric The mass spacing to search for (defaults to C13 - C12)}
+\item{cd}{numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.}
 }
 \value{
 list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
 }
 \description{
-Find knots - sets of features with defined spacing and retention time.
+This function is a subset function of findknots(). It searches isotopologue-like features at charge state z.
+}
+\seealso{
+\code{\link{findknots}}
 }

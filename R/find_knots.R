@@ -1,55 +1,24 @@
-#' Find knots - sets of features with defined spacing and retention time.
+#' Step 1 of Credentialing: Find Isotopic Knots and Resolve Charge State
 #'
-#' @param features data.frame Rows are features. Columns are "cc"
-#' @param .z integer Charge state to assume
-#' @param ppmwid numeric The maximum mass error in ppm.
-#' @param rtwid numeric The maximum retention time difference in seconds.
-#' @param cd numeric The mass spacing to search for (defaults to C13 - C12)
-#' @import igraph magrittr
-#'
-#' @return list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
-#'
-
-findzknots = function(features, .z=1, ppmwid=5, rtwid = 1, cd = 13.00335-12) {
-  
-  Cc = copy(data.table(features))
-  factor = 1
-  scales = c(ppmwid * 700 / 1E6, rtwid)
-  
-  # Cache residual
-  Cc[,c13r := mz %% (cd/.z)]
-  
-  # Iterative splitting
-  gcols = paste0("g", 1:6)
-  Cc[,(gcols) := "1"]
-  ngs = 1
-  repeat{
-    Cc[,g4 := paste(g4, clustgroup(cbind(c13r, rt), scales, factor)), by=gcols]
-    Cc[,g3 := paste(g3, breakgroup((mz %/% (cd/.z)), 1)), by=gcols]
-    
-    l = length(unique(Cc[,do.call(paste, .SD), .SDcols = gcols])); if (l == ngs) break else ngs = l
-  }
-  Cc[,c13c := as.integer(factor(paste(do.call(paste, .SD)))), .SDcols = gcols]
-  
-  c13c_meta = Cc[,.(meanr = mean(mz %% (cd/.z)), rt = mean(rt), n = length(mz), c13 = c13c[1], z= .z), by="c13c"][, c13c:=NULL]
-  
-  list(c13 = Cc[,.(cc, c13 = c13c)], c13. = c13c_meta)
-}
-
-
-#' Find knots and resolve charge state
-#'
-#' @param features data.frame Rows are features. Columns are "cc"
-#' @param .zs integer A vector containing the absolute value of the possible charges.
-#' @param ppmwid numeric The maximum mass error in ppm.
-#' @param rtwid numeric The maximum retention time difference in seconds.
-#' @param cd numeric The mass spacing to search for (defaults to C13 - C12)
-   #@param minlength Integer. If an ROI is shorter than this it is discarded.
-#'
-#' @seealso \code{\link{findzknots}}
+#' @description This function searches for 'knot' from feature table based on retention time and mass residual analysis. 
+#' A knot is a set of isotopologue-like features with defined m/z and retention time difference and same charge states.
+#' Based on the fact that isotopologues have identical mass residual against \code{cd} = 13C-12C (1.00335), mass residual 
+#' analysis can be used to cluster isotopologues. Mass residual of a feature is calculated as: (mz %% cd). 
+#' @usage findknots(features, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) 
+#' @param features data.table A feature table including at least four exclusive columns: "cc", "mz", "rt" and "i". Each row is a feature (peak).
+#' @param .zs integer A vector indicating all possible charge states to be searched against.
+#' @param ppmwid numeric Mass error tolerance in ppm.
+#' @param rtwid numeric The maximum retention time difference allowed in seconds.
+#' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Used for mass residual calculation. Defalut is 13C-12C = 13.00335 - 12.
+#' @import data.table utils 
+#' @return list A list with two tables "cc_knot" and "knot".  \code{cc_knot} data.table The index of feature-to-knot 
+#' assignment. \code{knot} data.table Aggregated information of all knots: knot#, meanr (mean mass residual), meanmz 
+#' (mean m/z), basemz (lowest mz peak), rt (mean rt), maxi (maximum intensity), n (number of peaks), z (charge state), 
+#' dir (relative of the knot from left to right, positive value for increasing, negative for decreasing).
+#' @keywords credentialing, findknots, metabolomics
+#' @seealso \code{\link{credentialing}}
+#' @export
 #' 
-#' @return list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
-#'
 findknots = function(features, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) { # Should search for and return isotope knots (including z with one knot per peak) representing individual compounds
   factor = 1
   Cc = copy(features)
@@ -108,7 +77,6 @@ findknots = function(features, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) {
     ds[which.max(abs(ds))]
   }
   
-  
   #Aggregate
   c13. = temp[,.(meanr = mean(mz %% (cd/z)), meanmz = mean(mz), basemz = min(mz), mainmz = mz[which.max(i)], rt = mean(rt), maxi=max(i),  n = length(mz), dir = calcdir(data.frame(mz, i, tail)), z= z[1]),by=c13]
   c13.[n==1, z := 0]
@@ -119,5 +87,45 @@ findknots = function(features, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) {
   
   cat("\nFound", nrow(c13.), "isotope knots.")
   
-  list(cc_knot = c13, knot = c13.)
+  return(list(cc_knot = c13, knot = c13.))
+}
+
+#' Core function of findknots(): Searching knots at charge state z
+#' 
+#' @description This function is a subset function of findknots(). It searches isotopologue-like features at charge state z.
+#' @usage findzknots(features, .z=1, ppmwid=5, rtwid = 1, cd = 13.00335-12)
+#' @param features data.table A feature table including at least four exclusive columns: "cc", "mz", "rt" and "i". Each row is a feature (peak).
+#' @param .z integer Charge state of the features.
+#' @param ppmwid numeric Mass error tolerance in ppm.
+#' @param rtwid numeric The maximum retention time difference allowed in seconds.
+#' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.
+#' @import igraph magrittr stats
+#' @return list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
+#' @seealso \code{\link{findknots}}
+#'
+
+findzknots = function(features, .z=1, ppmwid=5, rtwid = 1, cd = 13.00335-12) {
+  
+  Cc = copy(data.table(features))
+  factor = 1
+  scales = c(ppmwid * 700 / 1E6, rtwid)
+  
+  # Cache residual
+  Cc[,c13r := mz %% (cd/.z)]
+  
+  # Iterative splitting
+  gcols = paste0("g", 1:6)
+  Cc[,(gcols) := "1"]
+  ngs = 1
+  repeat{
+    Cc[,g4 := paste(g4, clustgroup(cbind(c13r, rt), scales, factor)), by=gcols]
+    Cc[,g3 := paste(g3, breakgroup((mz %/% (cd/.z)), 1)), by=gcols]
+    
+    l = length(unique(Cc[,do.call(paste, .SD), .SDcols = gcols])); if (l == ngs) break else ngs = l
+  }
+  Cc[,c13c := as.integer(factor(paste(do.call(paste, .SD)))), .SDcols = gcols]
+  
+  c13c_meta = Cc[,.(meanr = mean(mz %% (cd/.z)), rt = mean(rt), n = length(mz), c13 = c13c[1], z= .z), by="c13c"][, c13c:=NULL]
+  
+  return(list(c13 = Cc[,.(cc, c13 = c13c)], c13. = c13c_meta))
 }

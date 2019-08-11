@@ -16,7 +16,6 @@ convolve = function(...) {
   a
 }
 
-
 cbind.fill <- function(...){
   nm <- list(...)
   nm <- lapply(nm, as.matrix)
@@ -24,7 +23,6 @@ cbind.fill <- function(...){
   do.call(cbind, lapply(nm, function (x)
     rbind(x, matrix(, n-nrow(x), ncol(x)))))
 }
-
 
 clustgroup = function(mat, scales, factor) {
   if (nrow(mat) < 2) return(rep(1, nrow(mat)))

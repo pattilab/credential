@@ -2,52 +2,77 @@
 % Please edit documentation in R/credential_main.R
 \name{credentialing}
 \alias{credentialing}
-\title{#' Credentialing main function}
+\title{Credentialing Untargeted Metabolomics Dataset}
 \usage{
-credentialing(peaktable1, peaktable2, ppm, rtwin, rtcom, ratio1= 1/1, ratio2 = 1/2, ratio_tol=0.1, ratios_tol = 0.2, 
-cd=13.00335-12, charges= 1:4, mpc=c(12,120), maxnmer=4)
+credentialing(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3, ratio1= 1/1, ratio2 = 1/2, 
+ratio_tol=0.1, ratio_ratio_tol = 0.2, cd=13.00335-12, charges= 1:4, mpc=c(12,120), maxnmer=4, 
+export = T, plot=F, projectName = "Credentialing",...)
 }
 \arguments{
-\item{peaktable1}{data.table Feature table corresponding to the first ratio conditions.}
+\item{peaktable1}{data.table Peak table of the first credentialing group (ratio1).}
 
-\item{peaktable2}{data.table Feature table corresponding to the second ratio conditions.}
+\item{peaktable2}{data.table Peak table of the second credentialing group (ratio2).}
 
-\item{ppm}{numeric Mass error tolerance for knot searching and credentialing.}
+\item{ppm}{numeric Mass error tolerance (ppm) of credentialing peaks.}
 
-\item{rtwin}{numeric Retention time window for 1st round credentialing}
+\item{rtwin}{numeric Retention time tolerance (seconds) for credentialing peaks within group.}
 
-\item{rtcom}{numeric Retention time window for 2nd round credentialing}
+\item{rtcom}{numeric Retention time tolerance (seconds) for credentialing peaks between groups.}
 
-\item{ratio1}{numeric Ratio of designated 12C/13C ratio in peaktable1, default set to 1/1}
+\item{ratio1}{numeric Ratio of 12C/13C (unlabeled/labeled samples) mixing ratio of first credentialing group (peaktable1), default as 1/1.}
 
-\item{ratio2}{numeric Ratio of designated 12C/13C ratio in the first peaktable, by default set to 1/2}
+\item{ratio2}{numeric Ratio of 12C/13C (unlabeled/labeled samples) mixing ratio of second credentialing group (peaktable2), default as 1/2.}
 
-\item{ratio_tol}{numeric A decimal that controls the ratio range to pass the 1st round credentialing, The default value is 0.1.}
+\item{ratio_tol}{numeric A decimal number (0,1] controling range of acceptable intensity ratios as credentialing peaks within group. The default value is 0.1.}
 
-\item{ratios_tol}{numeric A decimal that controls the ratio range to pass the 2nd round credentialing, The default value is 0.2.}
+\item{ratio_ratio_tol}{numeric A decimal number (0,1] controling range of acceptable intensity ratios as credentialing peaks between groups. The default value is 0.1.}
 
-\item{cd}{numeric Unit mass difference among isotopologues. Defalut is 13C-12C = 13.00335 - 12.}
+\item{cd}{numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.}
 
-\item{charges}{numeric Possible charge states to be considered when searching isotope pairs. Default value is 1:4.}
+\item{charges}{numeric Possible charge states of isotopologues. Default value is 1:4.}
 
-\item{mpc}{numeric A vector of two values setting minimal and maximal theoretical mass per carbon to be considered. The default value is c(12,120)}
+\item{mpc}{numeric A vector of two values setting minimal and maximal theoretical mass per carbon to be considered. The default value is c(12,120).}
 
-\item{maxnmer}{numeric The maximal number of knots to accept within each credentialed features, The default value is 4.}
+\item{maxnmer}{numeric Maximum possible number of knots accepted in each credentialed groups, The default value is 4.}
+
+\item{export}{logical If TRUE, $credentialedgroups and $credentialedpeaks will be exported in CSV files.}
+
+\item{plot}{logical If TRUE, a PDF with credentialed peak groups' plots will be generated.}
+
+\item{projectName}{character Title of the credentialing project.}
+
+\item{...}{Further arguments to be passed.}
 }
 \value{
-A list of credentialed features.
+list credentialed features. \code{credentialedgroups} data.table A summary of credentialed quipus with
+following information: quipu#, nknot (number of knots), npeak (number of peaks), rtmean (mean retention time), 
+basemz (lowest mz), mainmz 1 (credentialed pair - unlabeled mz). mainmz 2 (credentialed pair - labeled mz), 
+int 1 (credentialed pair - intensity of unlabeled mz). int 2 (credentialed pair - intensity of labeled mz), 
+ratio (ratio of unlabled/labeled intensity), credentialed (TRUE/FALSE). \code{credentialedpeaks} data.table A summary
+of all credentialed peaks in two credentialing groups with following information: quipu#, knot#, cc# (feature index),
+charge (charge state), mz (m/z), rt (retention time), i (intensity), tail (if this peak is tail peak in knot),
+mainmz 1, mainmz 2, ratio. \code{credentialedknots1} list A list of credentailed knots (quipu) in first 
+credentialing group. \code{credentialedknots2} list A list of credentailed knots (quipu) in second credentialing group.
+\code{knots1} list All knots in first credentialing group (peaktable2) \code{knots2} list All knots in second credentialing group 
+(peaktable2). \code{CredentialParams} list Parameters used in this analysis.
 }
 \description{
-Credentialing workflow consists of four major parts. The analysis starts from two feature tables including index, m/z, retention time and intensity values for each isotope conditions.
-First, credentialing searches for 'knots' at all possible charge states in each feature table. A knot is defined as a set of features with defined retention time window and m/z ppm error.
-Second, credentialing breaks the knots with multiple isotopologue patterns. Third, credentialing clusteres searches for credentialed knots 
-based on the similarity, charge state, isotopologue pattern, mass per carbon violation, and peak intensity ratios. Fourth, credentialing matches credentialed 'quipu' from both isotope mixing conditions
-by checking head and tail peak m/z, retention time and intensity. 1st round credentialing is from step 1 to step 3 and 2nd round credentialing is step 4. 
-The output of credentialing is a list consisting of credentialed features and credentialed knots at different levels.
+Credentialing is a method to authenticate biologically relevant features in untargeted metabolomics 
+data. The analysis is based on two peak (feature) tables with index (cc), m/z (mz), retention time (rt) and 
+intensity (i) values. Each peak table represents a credentialing group where unlabeled and labeled biological 
+samples are mixed with certain ratio (ratio1, ratio2). First, credentialing searches 'knot' at designated 
+charge states in each peak table. A knot is a set of features with defined retention time and m/z spacing. 
+Second, credentialing breaks merged knots with multiple isotopologue patterns. Third, credentialing 
+searches 'quipu' from knots. A quipu is a set of knots with similar retention time and m/z spacing, charge state, 
+isotopologue pattern, qualifying mass per carbon and peak intensity ratios. Fourth, credentialing matches 
+credentialed quipus between two credentialing groups by retention time, charge state, head/tail m/z peaks and 
+ratio of their intensities.
 }
 \details{
-The main function of credentialing.
+The dispatching function of credentialing
+}
+\seealso{
+\code{\link{findknots}} \code{\link{credentialknots}} \code{\link{credentialquipu}}
 }
 \keyword{credentialing,}
 \keyword{metabolomics}
-\keyword{untargeted}

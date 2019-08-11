@@ -1,77 +1,114 @@
-#' #' Credentialing main function
+#' Credentialing Untargeted Metabolomics Dataset
 #'
-#' The main function of credentialing.
-#'
-#' @usage credentialing(peaktable1, peaktable2, ppm, rtwin, rtcom, ratio1= 1/1, ratio2 = 1/2, ratio_tol=0.1, ratios_tol = 0.2, 
-#' cd=13.00335-12, charges= 1:4, mpc=c(12,120), maxnmer=4)
-#' @param peaktable1 data.table Feature table corresponding to the first ratio conditions.
-#' @param peaktable2 data.table Feature table corresponding to the second ratio conditions.
-#' @param ppm numeric Mass error tolerance for knot searching and credentialing.
-#' @param rtwin numeric Retention time window for 1st round credentialing
-#' @param rtcom numeric Retention time window for 2nd round credentialing
-#' @param ratio1 numeric Ratio of designated 12C/13C ratio in peaktable1, default set to 1/1
-#' @param ratio2 numeric Ratio of designated 12C/13C ratio in the first peaktable, by default set to 1/2
-#' @param ratio_tol numeric A decimal that controls the ratio range to pass the 1st round credentialing, The default value is 0.1.
-#' @param ratios_tol numeric A decimal that controls the ratio range to pass the 2nd round credentialing, The default value is 0.2.
-#' @param cd numeric Unit mass difference among isotopologues. Defalut is 13C-12C = 13.00335 - 12.
-#' @param charges numeric Possible charge states to be considered when searching isotope pairs. Default value is 1:4.
-#' @param mpc numeric A vector of two values setting minimal and maximal theoretical mass per carbon to be considered. The default value is c(12,120)
-#' @param maxnmer numeric The maximal number of knots to accept within each credentialed features, The default value is 4.
-#' @description Credentialing workflow consists of four major parts. The analysis starts from two feature tables including index, m/z, retention time and intensity values for each isotope conditions.
-#' First, credentialing searches for 'knots' at all possible charge states in each feature table. A knot is defined as a set of features with defined retention time window and m/z ppm error.
-#' Second, credentialing breaks the knots with multiple isotopologue patterns. Third, credentialing clusteres searches for credentialed knots 
-#' based on the similarity, charge state, isotopologue pattern, mass per carbon violation, and peak intensity ratios. Fourth, credentialing matches credentialed 'quipu' from both isotope mixing conditions
-#' by checking head and tail peak m/z, retention time and intensity. 1st round credentialing is from step 1 to step 3 and 2nd round credentialing is step 4. 
-#' The output of credentialing is a list consisting of credentialed features and credentialed knots at different levels.
-#' @keywords credentialing, untargeted metabolomics
-#' @import data.table
-#' @return A list of credentialed features.
+#' The dispatching function of credentialing
+#' @usage credentialing(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3, ratio1= 1/1, ratio2 = 1/2, 
+#' ratio_tol=0.1, ratio_ratio_tol = 0.2, cd=13.00335-12, charges= 1:4, mpc=c(12,120), maxnmer=4, 
+#' export = T, plot=F, projectName = "Credentialing",...)
+#' @description Credentialing is a method to authenticate biologically relevant features in untargeted metabolomics 
+#' data. The analysis is based on two peak (feature) tables with index (cc), m/z (mz), retention time (rt) and 
+#' intensity (i) values. Each peak table represents a credentialing group where unlabeled and labeled biological 
+#' samples are mixed with certain ratio (ratio1, ratio2). First, credentialing searches 'knot' at designated 
+#' charge states in each peak table. A knot is a set of features with defined retention time and m/z spacing. 
+#' Second, credentialing breaks merged knots with multiple isotopologue patterns. Third, credentialing 
+#' searches 'quipu' from knots. A quipu is a set of knots with similar retention time and m/z spacing, charge state, 
+#' isotopologue pattern, qualifying mass per carbon and peak intensity ratios. Fourth, credentialing matches 
+#' credentialed quipus between two credentialing groups by retention time, charge state, head/tail m/z peaks and 
+#' ratio of their intensities.
+#' @param peaktable1 data.table Peak table of the first credentialing group (ratio1).
+#' @param peaktable2 data.table Peak table of the second credentialing group (ratio2).
+#' @param ppm numeric Mass error tolerance (ppm) of credentialing peaks.
+#' @param rtwin numeric Retention time tolerance (seconds) for credentialing peaks within group.
+#' @param rtcom numeric Retention time tolerance (seconds) for credentialing peaks between groups.
+#' @param ratio1 numeric Ratio of 12C/13C (unlabeled/labeled samples) mixing ratio of first credentialing group (peaktable1), default as 1/1.
+#' @param ratio2 numeric Ratio of 12C/13C (unlabeled/labeled samples) mixing ratio of second credentialing group (peaktable2), default as 1/2.
+#' @param ratio_tol numeric A decimal number (0,1] controling range of acceptable intensity ratios as credentialing peaks within group. The default value is 0.1.
+#' @param ratio_ratio_tol numeric A decimal number (0,1] controling range of acceptable intensity ratios as credentialing peaks between groups. The default value is 0.1.
+#' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.
+#' @param charges numeric Possible charge states of isotopologues. Default value is 1:4.
+#' @param mpc numeric A vector of two values setting minimal and maximal theoretical mass per carbon to be considered. The default value is c(12,120).
+#' @param maxnmer numeric Maximum possible number of knots accepted in each credentialed groups, The default value is 4.
+#' @param export logical If TRUE, $credentialedgroups and $credentialedpeaks will be exported in CSV files.
+#' @param plot logical If TRUE, a PDF with credentialed peak groups' plots will be generated.
+#' @param projectName character Title of the credentialing project.
+#' @param ... Further arguments to be passed.
+#' @keywords credentialing, metabolomics
+#' @import data.table magrittr utils ggplot2
+#' @return list credentialed features. \code{credentialedgroups} data.table A summary of credentialed quipus with
+#' following information: quipu#, nknot (number of knots), npeak (number of peaks), rtmean (mean retention time), 
+#' basemz (lowest mz), mainmz 1 (credentialed pair - unlabeled mz). mainmz 2 (credentialed pair - labeled mz), 
+#' int 1 (credentialed pair - intensity of unlabeled mz). int 2 (credentialed pair - intensity of labeled mz), 
+#' ratio (ratio of unlabled/labeled intensity), credentialed (TRUE/FALSE). \code{credentialedpeaks} data.table A summary
+#' of all credentialed peaks in two credentialing groups with following information: quipu#, knot#, cc# (feature index),
+#' charge (charge state), mz (m/z), rt (retention time), i (intensity), tail (if this peak is tail peak in knot),
+#' mainmz 1, mainmz 2, ratio. \code{credentialedknots1} list A list of credentailed knots (quipu) in first 
+#' credentialing group. \code{credentialedknots2} list A list of credentailed knots (quipu) in second credentialing group.
+#' \code{knots1} list All knots in first credentialing group (peaktable2) \code{knots2} list All knots in second credentialing group 
+#' (peaktable2). \code{CredentialParams} list Parameters used in this analysis.
+#' @seealso \code{\link{findknots}} \code{\link{credentialknots}} \code{\link{credentialquipu}}
 #' @export
 
-credentialing = function(peaktable1, peaktable2, ppm, rtwin, rtcom, ratio1= 1/1, ratio2 = 1/2, ratio_tol=0.1, ratios_tol = 0.2, cd=13.00335-12, charges= 1:4, mpc=c(12,120), maxnmer=4){
+credentialing = function(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3, 
+                         ratio1= 1/1, ratio2 = 1/2, ratio_tol=0.1, ratio_ratio_tol = 0.2, 
+                         cd=13.00335-12, charges= 1:4, mpc=c(12,120), maxnmer=4,
+                         export = T, plot=F, projectName = "Credentialing",
+                         ...){
 
   #initiation
   peaktable1 = data.table(peaktable1)
   peaktable2 = data.table(peaktable2)
   # 1st round credentialing
 
-  cat("Start 1st round Credentialing on peaktable1...\n")
+  cat("Cedentialing peaktable1...\n")
 
   # find possibel isotope head and tails in different charge states
-  knots_f1 = findknots(peaktable1, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
-  # Resolving issues with merged knots
-  knots_f1 = fixmergedquipu(knots_f1,peaktable1)
-  # heuristic search for knots that satisfying credentialing filters
-  credentials_f1 = credentialknots(knots_f1$knot, ppmwid = ppm, rtwid = rtwin, mpc = mpc, Ratio = ratio1, Ratio.lim = ratio_tol, maxnmer = maxnmer, cd = cd)
-  # labelled credentialed features at original peaktable
-  ft_1 = peaktable1[knots_f1$cc_knot[credentials_f1$knot_quipu[!is.na(quipu)],on="knot"],,on="cc"]
+  knots1 = findknots(peaktable1, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
+  # Resolve merged knots
+  knots1 = fixmergedknots(knots1,peaktable1)
+  # Heuristic search for knots that satisfying credentialing filters
+  credentialedknots1 = credentialknots(knots1, ppmwid = ppm, rtwid = rtwin, mpc = mpc, Ratio = ratio1, Ratio.lim = ratio_tol, maxnmer = maxnmer, cd = cd)
 
-  cat("Start 1st round Credentialing on peaktable2...\n")
-
-  #credentialing with ratio2 combination
-  knots_f2 = findknots(peaktable2, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
-  knots_f2 = fixmergedquipu(knots_f2,peaktable2)
-  credentials_f2 = credentialknots(knots_f2$knot, ppmwid = ppm, rtwid = rtwin, mpc = mpc, Ratio = ratio2, Ratio.lim = ratio_tol, maxnmer = maxnmer, cd = cd)
-
-  ft_2 = peaktable2[knots_f2$cc_knot[credentials_f2$knot_quipu[!is.na(quipu)],on="knot"],,on="cc"]
-
-  # rearrangement of credentialed features
-  dt1 = ft_1[credentials_f1$quipu[,c("quipu","ratio")][!is.na(quipu)],,on="quipu"]
-  dt2= ft_2[credentials_f2$quipu[,c("quipu","ratio")][!is.na(quipu)],,on="quipu"]
-
-  dtR1 = dt1[order(dt1[,"quipu"], dt1[,"mz"]),]
-  dtR2 = dt2[order(dt2[,"quipu"], dt2[,"mz"]),]
-
-  # 2nd round filtering
+  cat("Cedentialing peaktable2...\n")
   
-  cat("Start 2nd round Credentialing...\n")
-  match_cf = matchcredfeature(dtR1,dtR2,ppm=ppm,drt=rtcom,ratio=ratio1/ratio2,ratio_tol = ratios_tol)
+  #credentialing with ratio2 combination
+  knots2 = findknots(peaktable2, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
+  knots2 = fixmergedknots(knots2,peaktable2)
+  credentialedknots2 = credentialknots(knots2, ppmwid = ppm, rtwid = rtwin, mpc = mpc, Ratio = ratio2, Ratio.lim = ratio_tol, maxnmer = maxnmer, cd = cd)
+  
+  # 2nd round filtering
 
-   # data output
-
-  credentialing = list(CredentialedFeature1R1=ft_1, CredentialedFeature2R1=ft_2, knots1=knots_f1, knots2=knots_f2, credentialedKnots1=credentials_f1,credentialedKnots2=credentials_f2,
-                       CredentialedFeatureGroups = match_cf$Credentialed_FeatureGroups, CredentialedFeatureR2=match_cf$Credentialed_Features, CredentialedFeatureR2F = match_cf$Credentialed_Features_Filtered,
-                       CredentialedFeature1N2 = match_cf$NomatchFeatures_Group1, CredentialedFeature2N2 = match_cf$NomatchFeatures_Group2)
-
-  return(credentialing)
+  cat("Credentialing all quipu... \n")
+  credentialedquipus <- credentialquipu(credentialedknots1$quipu, credentialedknots2$quipu, ppm = ppm, rtwin = rtcom, ratio_ratio = ratio1/ratio2, ratio_ratio_lim = ratio_ratio_lim, tailmatch=T)
+  
+  # data clean-up
+  
+  ft_1 = peaktable1[knots1$cc_knot[credentialedknots1$knot_quipu[!is.na(quipu)],on="knot"],,on="cc"][quipu1[,.(quipu,charge1,mainmz11,mainmz12,ratio1)],,on="quipu"]
+  ft_1 = ft_1[,.(quipu1=quipu,knot,cc,charge1,mz,rt,i,tail,mainmz11,mainmz12,ratio1)]
+  ft_2 = peaktable2[knots2$cc_knot[credentialedknots2$knot_quipu[!is.na(quipu)],on="knot"],,on="cc"][quipu2[,.(quipu,charge2,mainmz21,mainmz22,ratio2)],,on="quipu"]
+  ft_2 = ft_2[,.(quipu2=quipu,knot,cc,charge2,mz,rt,i,tail,mainmz21,mainmz22,ratio2)]
+  
+  credentialedpeaks = do.call(rbind,apply(credentialedquipus$quipu_index[order(credentialedquipus$quipu_match$basemz1)], MARGIN = 1, function(x){cbind.fill(ft_1[quipu1==x[1]][order(mz)],ft_2[quipu2==x[2]][order(mz)])}))
+  
+  cat("Credentialing finished...\nFound", nrow(credentialedquipus$quipu_match), "credentialed features.")
+  
+  CredentialParams <- list(ppm=ppm, rtwin=rtwin, rtcom=rtcom, 
+                           ratio1 = ratio1, ratio2 = ratio2, ratio_tol = ratio_tol, ratio_ratio_tol = ratio_ratio_tol, 
+                           cd = cd, charges = charges, mpc = mpc, maxnmer = maxnmer,
+                           export = export, plot = plot, projectName = projectName)
+  
+  credentialed = list(credentialedgroups = credentialedquipus$quipu_match, 
+                      credentialedpeaks = credentialedpeaks,
+                      credentialedknots1, credentialedknots2,
+                      knots1,knots2,
+                      CredentialParams)
+  
+  if(export){
+    write.csv(credentialed$credentialedgoups,file = paste0(projectName,"_CredentialedGroups_",Sys.time()))
+    write.csv(credentialed$credentialedpeaks,file = paste0(projectName,"_CredentialedPeaks_",Sys.time()))
+  }
+  
+  # working on it
+  if(plot) {
+  }
+  
+  return(credentialed)
 }

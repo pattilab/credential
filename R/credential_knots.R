@@ -1,7 +1,120 @@
-credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, ratio.lim, maxdimer, cd, do.plot, scales) {
-  #cat("\rWorking on knots:", knots$knot, "                                                      ")
+#' Step 3 of Credentialing: Find Isotope Knots and Resolve Charge State
+#'
+#' @description This function searches 'quipu' in knots. A quipu is a set of knots with same charge state and similar 
+#' retention time and m/z spacing. A credentialed quipu also qualifies for theoretical mass-per-cabon range and 
+#' ratio of the head-tail peak intensities
+#' @usage credentialknots(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio = 1/1, Ratio.lim = 0.1, 
+#' maxnmer = 4, cd = 13.00335-12, .zs = 1:4)
+#' @param Knots list The original output of findknots()
+#' @param ppmwid numeric Mass error tolerance (ppm) of credentialed knots.
+#' @param rtwid numeric Retention time tolerance (seconds) of credentialed knots.
+#' @param mpc numeric Mass-per-carbon filter. A vector of two values setting minimum and maximum theorectical mass per carbon.
+#' @param Ratio numeric The mixing ratio of unlabled/labeled (12C/13C) samples.
+#' @param Ratio.lim numeric Ratio filter. A decimal number (0,1] controling ranges of acceptable deviation of 
+#' unlabeled/labeled ratio from mixing ratio.
+#' @param maxnmer numeric Maximumly allowed number of knots in each credentialed groups, The default value is 4.
+#' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.
+#' @param .zs numeric Possible charge states of isotopologues. Default value is 1:4.
+#' @keywords credentialing, credentialknots, 
+#' @import data.table igraph magrittr stats matrixStats
+#' @seealso \code{\link{findknots}} \code{\link{credentialing}}
+#' @return list A list of three tables "knot_quipu", "quipu" and "quipu_stat". \code{knot_quipu} data.table The index of quipu-to-knot 
+#' assignment. \code{quipu} data.table Aggregated information of all quipus: quipu#, nknot (number of knots), 
+#' npeak (number of peaks), rtmean (mean retention time), basemz (lowest mz), mainmz 1 (credentialed pair - 
+#' unlabeled mz). mainmz 2 (credentialed pair - labeled mz), int 1 (credentialed pair - intensity of unlabeled mz). 
+#' int 2 (credentialed pair - intensity of labeled mz), ratio (ratio of unlabled/labeled intensity).
+#' \code{quipu_stat} data.table Statistical information of all quipus: quipu#, minsupport (minimum number 
+#' of peaks among the knots), maxsupport (maximum number of peaks among the knots), nknot
+#' @export
+#' 
+
+credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio = 1/1, Ratio.lim = 0.1, 
+                           maxnmer = 4, cd = 13.00335-12, .zs = 1:4) {
+  
+  Knot = copy(Knots$knot)
+  cat("\nCredentialing within", length(unique(Knot$knot)), "supplied knots.")
+  factor = 1
+  do.plot = F
+  maxdimer = maxnmer
+  scales = c(ppmwid * 700 / 1E6, rtwid)
+  
+  # Initial Grouping by rt and meanr and z
+  gcols = paste0("g", 1:6)
+  Knot[,(gcols) := 1L]
+  
+  Knot[,g1 := z]
+  Knot[,g2 := as.integer(clustgroup(cbind(meanr, rt), scales, factor)), by=gcols]
+  
+  Knot[,rrtg := as.integer(factor(paste(do.call(paste, .SD)))), .SDcols = gcols]
+  Knot[,(gcols) := NULL]
+  
+  cat("\nWorking with supported charge states.")
+  Knot_quipu = copy(Knot[,.(knot)])
+  for (.rrtg in unique(Knot[z>0]$rrtg)) {
+    knots = Knot[rrtg == .rrtg]
+    credential(knots, Knot_quipu, ppmwid = ppmwid, rtwid = rtwid, factor = factor, mpc = mpc, ratio = Ratio, ratio.lim = Ratio.lim, maxdimer = maxdimer, cd = cd, do.plot = do.plot)
+  }
+  cat("\rWorking with supported charge states.", "Found", length(unique(Knot_quipu$q)), "credentialed knots.")
+  lastn = length(unique(Knot_quipu$q))
+  
+  for (.z in unique(c(Knot$z, .zs))) {
+    cat("\nWorking with unsupported charge state:", .z)
+    lastn = length(unique(Knot_quipu$q))
+    if (.z == 0) next
+    
+    subknots = Knot[Knot_quipu[is.na(q)], , on="knot"][,gtemp := as.integer(clustgroup(cbind(meanr, rt), scales, factor))][z %in% c(0, .z)]
+    for (.gtemp in unique(subknots$gtemp)) {
+      knots = subknots[gtemp == .gtemp]
+      knots[,meanr := meanmz %/% (cd/.z)]
+      knots[1,z:=.z]
+      credential(knots, Knot_quipu, ppmwid = ppmwid, rtwid = rtwid, factor = factor, mpc = mpc, ratio = Ratio, ratio.lim = Ratio.lim, maxdimer = maxdimer, cd = cd, do.plot = do.plot)
+    }
+    
+    cat("\rWorking with unsupported charge state:", .z, "Found", length(unique(Knot_quipu$q)) - lastn, "credentialed knots.")
+  }
   
   
+  Knot_quipu[,':='(quipu = as.integer(factor(q)), q = NULL)]
+  
+  Quipu = Knot_quipu[Knot,,on="knot"][,.(minsupport = min(n), maxsupport = max(n), nknot = .N, ratio = calcratio(.SD)), by="quipu"][!is.na(quipu) & !duplicated(quipu)][ratio > Ratio*Ratio.lim & ratio < Ratio/Ratio.lim]
+  
+  cat("\nAfter intensity check, found", nrow(Quipu), "credentialed knots.")
+  
+  Quipu_stat = Quipu[,.(quipu,minsupport,maxsupport,nknot)]
+  
+  Quipu = Knot[Knot_quipu[Quipu,,on="quipu"],,on="knot"]
+  Quipu = Quipu[,.(nknot = nknot, npeak = sum(n), rtmean = mean(rt), charge=z, basemz = min(basemz), mainmz1 = min(mainmz), mainmz2 = max(mainmz), int1 = min(maxi), int2 = max(maxi), ratio = ratio), by = "quipu"]
+  Quipu = Quipu[!duplicated(Quipu$quipu)]
+  
+  return(list(knot_quipu = Knot_quipu[which(quipu %in% unique(Quipu$quipu))], quipu = Quipu, quipu_stat = Quipu_stat))
+}
+
+#' Core algorithm of credentialknots: Heuristic search for knots that satisfy credentialing filters
+#'
+#' @description This functions identify credentialed knots pairs by intensity ratio check, mass-per-carbon check,
+#' direction check followed by graph-clustering. 
+#' @usage credential(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, ratio.lim, maxdimer, cd, do.plot)
+#' @param knots data.table. A subset of knots with same charge state to be credentialed.
+#' @param Knot_quipu data.table The initial index of knot-to-quipu assignment.
+#' @param ppmwid numeric Mass error tolerance (ppm) of credentialed knots.
+#' @param rtwid numeric Retention time tolerance (seconds) of credentialed knots.
+#' @param factor numeric Height cutoff of hierarchical clustering knots by (meanr, rt)
+#' @param mpc numeric Mass-per-carbon filter. A vector of two values setting minimum and maximum theorectical mass per carbon.
+#' @param ratio numeric The mixing ratio of unlabled/labeled (12C/13C) samples.
+#' @param ratio.lim numeric Ratio filter. A decimal number (0,1] controling ranges of acceptable deviation of 
+#' unlabeled/labeled ratio from mixing ratio.
+#' @param maxdimer numeric Maximumly allowed number of knots in each credentialed groups, The default value is 4.
+#' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.
+#' @param do.plot logical If set to TRUE, plot the credentialing scores of the knots
+#' @keywords credentialing, metabolomics
+#' @import igraph magrittr stats matrixStats
+#' @seealso \code{\link{credentialknots}} \code{\link{findknots}}
+#' @return \code{Knot_quipu} data.table The new index of knot-to-quipu assignment after credentialing. 
+#'
+
+credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, ratio.lim, maxdimer, cd, do.plot) {
+  
+  scales = c(ppmwid * 700 / 1E6, rtwid)
   knots[z==0, z:=max(knots$z)]
   
   # Split up peaks if possible
@@ -131,83 +244,17 @@ credential = function(knots, Knot_quipu, ppmwid, rtwid, factor, mpc, ratio, rati
     Knot_quipu[knots2[DT$value],q := paste(paste(knots$knot, collapse = " "), .mdig, DT$Var2),on="knot"]
   }
 }
-
-#' Heuristic search for knots which satisfy credentialing filters
-#'
-#' @param Knots data.frame Rows are knots.
-#' @param ppmwid numeric The maximum mass error in ppm.
-#' @param rtwid numeric The maximum retention time difference in seconds.
-#' @param mpc numeric Vector containing the minimum and maximum allowable mass per carbon.
-#' @param Ratio numeric The ratio of U12C/U13C.
-#' @param Ratio.lim numeric The maximum deviation from that ratio.
-#' @param maxnmer integer The biggest n-mer to search for.
-#' @param .zs integer The charge states to search for.
-#' @param cd numeric The mass spacing to search for (defaults to C13 - C12)
-#' @import igraph magrittr stats
-#' @seealso \code{\link{findknots}}
+#' Calculation of ratio of unlabeled/labeled (12C/13C) peak intensities.
 #' 
-#' @return list A list with values "knot_quipu" and "quipu".  \code{knot_quipu} assigns feature knots to quipu - credentialed groups. \code{quipu} contains aggregate information about each credentialed group.
-#'
-credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio = 1/1, Ratio.lim = 0.1, maxnmer = 4, cd = 13.00335-12, .zs = 1:4) {
-  cat("\nCredentialing within", length(unique(Knots$knot)), "supplied knots.")
-  factor = 1
-  maxdimer = maxnmer
-  do.plot = F
-  Knot = copy(Knots)
-  scales = c(ppmwid * 700 / 1E6, rtwid)
-  
-  # Initial Grouping by rt and meanr and z
-  gcols = paste0("g", 1:6)
-  Knot[,(gcols) := 1L]
-  
-  Knot[,g1 := z]
-  Knot[,g2 := as.integer(clustgroup(cbind(meanr, rt), scales, factor)), by=gcols]
-  
-  Knot[,rrtg := as.integer(factor(paste(do.call(paste, .SD)))), .SDcols = gcols]
-  Knot[,(gcols) := NULL]
-  
-  cat("\nWorking with supported charge states.")
-  Knot_quipu = copy(Knot[,.(knot)])
-  for (.rrtg in unique(Knot[z>0]$rrtg)) {
-    knots = Knot[rrtg == .rrtg]
-    credential(knots, Knot_quipu, ppmwid = ppmwid, rtwid = rtwid, factor = factor, mpc = mpc, ratio = Ratio, ratio.lim = Ratio.lim, maxdimer = maxdimer, cd = cd, do.plot = do.plot, scales = scales)
-  }
-  cat("\rWorking with supported charge states.", "Found", length(unique(Knot_quipu$q)), "credentialed knots.")
-  lastn = length(unique(Knot_quipu$q))
-  
-  for (.z in unique(c(Knot$z, .zs))) {
-    cat("\nWorking with unsupported charge state:", .z)
-    lastn = length(unique(Knot_quipu$q))
-    if (.z == 0) next
-    
-    subknots = Knot[Knot_quipu[is.na(q)], , on="knot"][,gtemp := as.integer(clustgroup(cbind(meanr, rt), scales, factor))][z %in% c(0, .z)]
-    for (.gtemp in unique(subknots$gtemp)) {
-      knots = subknots[gtemp == .gtemp]
-      knots[,meanr := meanmz %/% (cd/.z)]
-      knots[1,z:=.z]
-      credential(knots, Knot_quipu, ppmwid = ppmwid, rtwid = rtwid, factor = factor, mpc = mpc, ratio = Ratio, ratio.lim = Ratio.lim, maxdimer = maxdimer, cd = cd, do.plot = do.plot,scales = scales)
-    }
-    
-    cat("\rWorking with unsupported charge state:", .z, "Found", length(unique(Knot_quipu$q)) - lastn, "credentialed knots.")
-  }
-  
-  
-  Knot_quipu[,':='(quipu = as.integer(factor(q)), q = NULL)]
-  
-  Quipu = Knot_quipu[Knot,,on="knot"][,.(minsupport = min(n), maxsupport = max(n), nknot = .N, ratio = calcratio(.SD)), by="quipu"][!is.na(quipu) & !duplicated(quipu)][ratio > Ratio*Ratio.lim & ratio < Ratio/Ratio.lim]
-  
-  Knot_quipu[which(quipu %in% unique(Quipu$quipu))]
-  
-  cat("\nAfter intensity check, found", nrow(Quipu), "credentialed knots.")
-  
-  list(knot_quipu = Knot_quipu, quipu = Quipu)
-}
-
+#' @usage calcratio(knot)
+#' @param knot a set of knots to be calculated. The data structure are the same as
+#' @return numeric Ratio of measured intensities 
+#' @seealso \code{\link{findknots}} \code{\link{findknots}}
+#' @import data.table
 
 calcratio = function(knot) {
   li = which.min(knot$mainmz)
   hi = which.max(knot$mainmz)
-  
   knot$maxi[li]/knot$maxi[hi]
 }
 

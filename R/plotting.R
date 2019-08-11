@@ -1,4 +1,18 @@
-plot.knots = function(.knot, knots, features, scales = c(1,1), ...) {
+#' Diagnostic Plotting Function for Knot
+#'
+#' @description This function generate plots of knots with m/z   
+#' @usage plotknots(.knot, knots, features, scales = c(1,1), ...)
+#' @param .knot numeric Knot index.
+#' @param knots list Knots. The output of findknots()
+#' @param features numeric The maximum retention time difference in seconds.
+#' @param scales numeric Vector containing the minimum and maximum allowable mass per carbon.
+#' @param ... Further arguments to be passed.
+#' @import data.table magrittr ggplot2 gridExtra
+#' @seealso \code{\link{findknots}}
+#' @return a ggplot object A list with values "knot_quipu" and "quipu".  \code{knot_quipu} assigns feature knots to quipu - credentialed groups. \code{quipu} contains aggregate information about each credentialed group.
+#' 
+
+plotknots = function(.knot, knots, features, scales = c(1,1), ...) {
     
     df = features[knots$cc_knot,,on="cc"][knots$knot[knot%in%.knot],,on="knot", nomatch=0] %>% data.table
     xlim = c(min(df$mz)-15, max(df$mz)+15)
@@ -15,6 +29,8 @@ plot.knots = function(.knot, knots, features, scales = c(1,1), ...) {
     
 }
 
+# Plotting Quipu
+
 plot.quipu = function(.quipu=NULL, quipus, knots, features, export = TRUE, file = "quipu.pdf", ...) {
   
   if(is.null(.quipu))
@@ -28,4 +44,12 @@ plot.quipu = function(.quipu=NULL, quipus, knots, features, export = TRUE, file 
   plot.knots(quipus$quipu[quipus$knot_quipu[quipu %in% q],,on="quipu"]$knot, knots, features)
   }
   dev.off()
+}
+
+# Plotting Pairs of Credentialed Features
+plotCredentialedpeak = function(credentialedquipus) {
+  
+  # credentialedquipus$quipu_match
+  credentialedquipus$quipu_match
+  # credentialedquipus$quipu
 }

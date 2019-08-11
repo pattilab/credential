@@ -1,19 +1,21 @@
 Package: credential
 Type: Package
 Title: Metabolomic artifact, noise, and contaminant removal
-Version: 3.0.1
+Version: 3.1.1
 Date: 2019-06-25
 Author: Nathanial Guy Mahieu <nate@mahie.us>, Lingjue Wang<lingjue@wustl.edu>
 Maintainer: Lingjue Wang <lingjue@wustl.edu>
 Description: Credentialing searches for U12C-U13C feature pairs in labeled metabolomic data.
 Depends: 
-    R (>= 3.5.0),
+    R (>= 3.5.0)
 Imports:
     igraph,
     magrittr,
+    stats,
     matrixStats,
     gridExtra,
     ggplot2,
+    utils,
     data.table,
     sn
 Suggests:
