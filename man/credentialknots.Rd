@@ -44,5 +44,5 @@ ratio of the head-tail peak intensities
 \seealso{
 \code{\link{findknots}} \code{\link{credentialing}}
 }
-\keyword{credentialing,}
-\keyword{credentialknots,}
+\keyword{credentialing}
+\keyword{credentialknots}

@@ -24,14 +24,15 @@ ratio1/ratio2 from ratio_ratio, The default value is 0.5.}
 \item{tailmatch}{logical Whether or not to include tail peak m/z when matching quipus.}
 }
 \value{
-list A list of three tables "quipu_index" and quipu_match". \code{quipu_index} data.table 
-The index of quipu-to-quipu assignment between two credentialing conditions. \code{quipu_match} data.table 
-Aligned and merged table of quipu1 and quipu2 according to quipu_index.
+list A list of three tables "credentialedindex" and credentialedgroups". \code{credentialedindex} data.table
+The index of quipu-to-quipu assignment between two credentialing conditions. \code{credentialedgroup} data.table
+The final credentialed groups according to assignment of "credentialedindex", including 'quipu',
+'nknot', 'npeak', 'rtmean', 'charge','basemz', 'mainmz1', 'mainmz2', 'int1','int2', 'ratio' and
+'ratio_ratio'.
 }
 \description{
 This function matches two set of quipus (credentialed knots) by their retention time cutoff, 
 head&tail m/z, charge state, peak intensities ratio.
 }
-\keyword{credentialing,}
-\keyword{credentialquipu,}
-\keyword{metabolomics}
+\keyword{credential}
+\keyword{credentialquipu}

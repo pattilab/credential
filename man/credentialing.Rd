@@ -74,5 +74,6 @@ The dispatching function of credentialing
 \seealso{
 \code{\link{findknots}} \code{\link{credentialknots}} \code{\link{credentialquipu}}
 }
-\keyword{credentialing,}
+\keyword{credential}
+\keyword{credentialing}
 \keyword{metabolomics}

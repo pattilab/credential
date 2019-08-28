@@ -15,7 +15,7 @@
 #' assignment. \code{knot} data.table Aggregated information of all knots: knot#, meanr (mean mass residual), meanmz 
 #' (mean m/z), basemz (lowest mz peak), rt (mean rt), maxi (maximum intensity), n (number of peaks), z (charge state), 
 #' dir (relative of the knot from left to right, positive value for increasing, negative for decreasing).
-#' @keywords credentialing, findknots, metabolomics
+#' @keywords credential findknots
 #' @seealso \code{\link{credentialing}}
 #' @export
 #' 

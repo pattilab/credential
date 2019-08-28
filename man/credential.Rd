@@ -40,5 +40,5 @@ direction check followed by graph-clustering.
 \seealso{
 \code{\link{credentialknots}} \code{\link{findknots}}
 }
-\keyword{credentialing,}
-\keyword{metabolomics}
+\keyword{credential}
+\keyword{credentialknots}

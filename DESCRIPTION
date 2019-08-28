@@ -1,8 +1,8 @@
 Package: credential
 Type: Package
-Title: Metabolomic artifact, noise, and contaminant removal
-Version: 3.1.1
-Date: 2019-06-25
+Title: An bioinformatics tool for biologically-relavent feature extraction and untargeted metabolomics method optimization.
+Version: 3.1.4
+Date: 2019-08-28
 Author: Nathanial Guy Mahieu <nate@mahie.us>, Lingjue Wang<lingjue@wustl.edu>
 Maintainer: Lingjue Wang <lingjue@wustl.edu>
 Description: Credentialing searches for U12C-U13C feature pairs in labeled metabolomic data.
@@ -15,11 +15,12 @@ Imports:
     matrixStats,
     gridExtra,
     ggplot2,
+    grDevices,
     utils,
     data.table,
-    sn
+    sn,
+    xcms
 Suggests:
-    xcms,
     rmarkdown,
     readr
 URL: https://github.com/pattilab/credential

@@ -32,6 +32,5 @@ analysis can be used to cluster isotopologues. Mass residual of a feature is cal
 \seealso{
 \code{\link{credentialing}}
 }
-\keyword{credentialing,}
-\keyword{findknots,}
-\keyword{metabolomics}
+\keyword{credential}
+\keyword{findknots}

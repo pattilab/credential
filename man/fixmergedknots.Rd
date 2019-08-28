@@ -22,6 +22,5 @@ are broken half as two new knots.
 \seealso{
 \code{\link{findknots}} \code{\link{credentialing}}
 }
-\keyword{credentialing,}
-\keyword{fixmergedknot,}
-\keyword{metabolomics}
+\keyword{credential}
+\keyword{fixmergedknots}

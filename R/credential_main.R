@@ -31,7 +31,7 @@
 #' @param plot logical If TRUE, a PDF with credentialed peak groups' plots will be generated.
 #' @param projectName character Title of the credentialing project.
 #' @param ... Further arguments to be passed.
-#' @keywords credentialing, metabolomics
+#' @keywords credential credentialing metabolomics
 #' @import data.table magrittr utils ggplot2
 #' @return list credentialed features. \code{credentialedgroups} data.table A summary of credentialed quipus with
 #' following information: quipu#, nknot (number of knots), npeak (number of peaks), rtmean (mean retention time), 
@@ -58,7 +58,7 @@ credentialing = function(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3,
   peaktable2 = data.table(peaktable2)
   # 1st round credentialing
 
-  cat("Cedentialing peaktable1...\n")
+  cat("\nCedentialing peaktable1...\n")
 
   # find possibel isotope head and tails in different charge states
   knots1 = findknots(peaktable1, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
@@ -67,7 +67,7 @@ credentialing = function(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3,
   # Heuristic search for knots that satisfying credentialing filters
   credentialedknots1 = credentialknots(knots1, ppmwid = ppm, rtwid = rtwin, mpc = mpc, Ratio = ratio1, Ratio.lim = ratio_tol, maxnmer = maxnmer, cd = cd)
 
-  cat("Cedentialing peaktable2...\n")
+  cat("\nCedentialing peaktable2...\n")
   
   #credentialing with ratio2 combination
   knots2 = findknots(peaktable2, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
@@ -76,39 +76,42 @@ credentialing = function(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3,
   
   # 2nd round filtering
 
-  cat("Credentialing all quipu... \n")
-  credentialedquipus <- credentialquipu(credentialedknots1$quipu, credentialedknots2$quipu, ppm = ppm, rtwin = rtcom, ratio_ratio = ratio1/ratio2, ratio_ratio_lim = ratio_ratio_lim, tailmatch=T)
+  cat("\nCredentialing all quipus...")
+  credentialedquipus <- credentialquipu(credentialedknots1, credentialedknots2, ppm = ppm, rtwin = rtcom, ratio_ratio = ratio1/ratio2, ratio_ratio_tol = ratio_ratio_tol, tailmatch = T)
   
   # data clean-up
   
-  ft_1 = peaktable1[knots1$cc_knot[credentialedknots1$knot_quipu[!is.na(quipu)],on="knot"],,on="cc"][quipu1[,.(quipu,charge1,mainmz11,mainmz12,ratio1)],,on="quipu"]
-  ft_1 = ft_1[,.(quipu1=quipu,knot,cc,charge1,mz,rt,i,tail,mainmz11,mainmz12,ratio1)]
-  ft_2 = peaktable2[knots2$cc_knot[credentialedknots2$knot_quipu[!is.na(quipu)],on="knot"],,on="cc"][quipu2[,.(quipu,charge2,mainmz21,mainmz22,ratio2)],,on="quipu"]
-  ft_2 = ft_2[,.(quipu2=quipu,knot,cc,charge2,mz,rt,i,tail,mainmz21,mainmz22,ratio2)]
+  ft_1 = peaktable1[knots1$cc_knot[credentialedknots1$knot_quipu[!is.na(quipu)],,on="knot"],,on="cc"][credentialedquipus$credentialedgroups[,.(quipu=quipu1,charge1,mainmz11,mainmz21,ratio1)],,on="quipu"]
+  ft_1 = ft_1[,.(cc1=cc,mz1=mz,rt1=rt,i1=i,knot1=knot,tail1=tail,quipu1=quipu,charge1,mainmz11,mainmz21,ratio1)]
+  ft_2 = peaktable2[knots2$cc_knot[credentialedknots2$knot_quipu[!is.na(quipu)],,on="knot"],,on="cc"][credentialedquipus$credentialedgroups[,.(quipu=quipu2,charge2,mainmz12,mainmz22,ratio2,ratio1_ratio2)],,on="quipu"]
+  ft_2 = ft_2[,.(cc2=cc,mz2=mz,rt2=rt,i2=i,knot2=knot,tail2=tail,quipu2=quipu,charge2,mainmz12,mainmz22,ratio2,ratio1_ratio2)]
   
-  credentialedpeaks = do.call(rbind,apply(credentialedquipus$quipu_index[order(credentialedquipus$quipu_match$basemz1)], MARGIN = 1, function(x){cbind.fill(ft_1[quipu1==x[1]][order(mz)],ft_2[quipu2==x[2]][order(mz)])}))
+  credentialedpeaks = do.call(rbind,apply(credentialedquipus$credentialedindex, MARGIN = 1, function(x){cbind.fill(ft_1[quipu1==x[1]][order(mz1)],ft_2[quipu2==x[2]][order(mz2)])}))
   
-  cat("Credentialing finished...\nFound", nrow(credentialedquipus$quipu_match), "credentialed features.")
+  cat("\n Credentialing finished...\nFound", nrow(credentialedquipus$credentialedgroups), "credentialed peaks.")
   
   CredentialParams <- list(ppm=ppm, rtwin=rtwin, rtcom=rtcom, 
                            ratio1 = ratio1, ratio2 = ratio2, ratio_tol = ratio_tol, ratio_ratio_tol = ratio_ratio_tol, 
                            cd = cd, charges = charges, mpc = mpc, maxnmer = maxnmer,
                            export = export, plot = plot, projectName = projectName)
   
-  credentialed = list(credentialedgroups = credentialedquipus$quipu_match, 
+  credentialed = list(credentialedgroups = credentialedquipus$credentialedgroups,
                       credentialedpeaks = credentialedpeaks,
-                      credentialedknots1, credentialedknots2,
-                      knots1,knots2,
-                      CredentialParams)
+                      credentialedindex = credentialedquipus$credentialedindex,
+                      credentialedknots1 = credentialedknots1,
+                      credentialedknots2 = credentialedknots2,
+                      knots1 = knots1, knots2 = knots2,
+                      CredentialParams = CredentialParams)
+  
+  if(plot) {
+    plotcredpeaks(Credentialedindex = credentialedquipus$credentialedindex, Credentialedpeaks = credentialedpeaks,
+                     filename = paste(paste(projectName,nrow(credentialedquipus$credentialedindex),"credentialed_peak_groups",sep="_"),".pdf",sep=""))
+  }
   
   if(export){
-    write.csv(credentialed$credentialedgoups,file = paste0(projectName,"_CredentialedGroups_",Sys.time()))
-    write.csv(credentialed$credentialedpeaks,file = paste0(projectName,"_CredentialedPeaks_",Sys.time()))
+    write.csv(credentialed$credentialedgroups,file = paste0(projectName,"_CredentialedGroups.csv"))
+    write.csv(credentialed$credentialedpeaks,file = paste0(projectName,"_CredentialedPeaks.csv"))
+    cat("\nCredentialing results are exported under:\n", getwd())
   }
-  
-  # working on it
-  if(plot) {
-  }
-  
   return(credentialed)
 }

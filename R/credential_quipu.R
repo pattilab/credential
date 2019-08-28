@@ -13,10 +13,12 @@
 #' ratio1/ratio2 from ratio_ratio, The default value is 0.5.
 #' @param tailmatch logical Whether or not to include tail peak m/z when matching quipus.
 #' @import data.table magrittr
-#' @keywords credentialing, credentialquipu, metabolomics
-#' @return list A list of three tables "quipu_index" and quipu_match". \code{quipu_index} data.table 
-#' The index of quipu-to-quipu assignment between two credentialing conditions. \code{quipu_match} data.table 
-#' Aligned and merged table of quipu1 and quipu2 according to quipu_index.
+#' @keywords credential credentialquipu
+#' @return list A list of three tables "credentialedindex" and credentialedgroups". \code{credentialedindex} data.table
+#' The index of quipu-to-quipu assignment between two credentialing conditions. \code{credentialedgroup} data.table
+#' The final credentialed groups according to assignment of "credentialedindex", including 'quipu',
+#' 'nknot', 'npeak', 'rtmean', 'charge','basemz', 'mainmz1', 'mainmz2', 'int1','int2', 'ratio' and
+#' 'ratio_ratio'.
 #' @export
 
 credentialquipu <- function(credentialedknots1, credentialedknots2, ppm = 15, rtwin = 1, ratio_ratio = 2, ratio_ratio_tol = 0.5, tailmatch=T){
@@ -45,7 +47,7 @@ credentialquipu <- function(credentialedknots1, credentialedknots2, ppm = 15, rt
   # head&tail or head only
   if (tailmatch) {
   mz_ind = which(mzppm1 == 1 & mzppm2 ==1, arr.ind=T)
-  } else {mz_ind1 = which(mzppm1 == 1, arr.ind=T)}
+  } else {mz_ind = which(mzppm1 == 1, arr.ind=T)}
   
   match_ind = rbind(mz_ind, rt_ind)[duplicated(rbind(mz_ind,rt_ind)),]
   match_ind = rbind(match_ind, cs_ind)[duplicated(rbind(match_ind,cs_ind)),]
@@ -71,7 +73,8 @@ credentialquipu <- function(credentialedknots1, credentialedknots2, ppm = 15, rt
   quipu_match[,"ratio1_ratio2" := ratio1/ratio2][,"credentialed":= ratio1_ratio2 <= ratio_ratio / ratio_ratio_tol & ratio1_ratio2 >= ratio_ratio * ratio_ratio_tol]
   
   # clean up data
-  credentialedquipu = list(quipu_index = quipu_match[,.(quipu1,quipu2)], quipu_match = quipu_match)
+  quipu_match = quipu_match[order(basemz1)]
+  credentialedquipu = list(credentialedindex = quipu_match[credentialed == TRUE,.(quipu1,quipu2)], credentialedgroups = quipu_match[credentialed == TRUE])
   
   return(credentialedquipu)
 }

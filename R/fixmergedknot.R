@@ -8,7 +8,7 @@
 #' @param features data.table Feature table corresponding to the Knot.
 #' @import data.table utils 
 #' @return list A list with identical data sturcture as the input \code{Knot}.
-#' @keywords credentialing, fixmergedknot, metabolomics
+#' @keywords credential fixmergedknots
 #' @seealso \code{\link{findknots}} \code{\link{credentialing}}
 #' @export
 

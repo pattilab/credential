@@ -15,7 +15,7 @@
 #' @param maxnmer numeric Maximumly allowed number of knots in each credentialed groups, The default value is 4.
 #' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.
 #' @param .zs numeric Possible charge states of isotopologues. Default value is 1:4.
-#' @keywords credentialing, credentialknots, 
+#' @keywords credentialing credentialknots 
 #' @import data.table igraph magrittr stats matrixStats
 #' @seealso \code{\link{findknots}} \code{\link{credentialing}}
 #' @return list A list of three tables "knot_quipu", "quipu" and "quipu_stat". \code{knot_quipu} data.table The index of quipu-to-knot 
@@ -78,7 +78,7 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio
   
   Quipu = Knot_quipu[Knot,,on="knot"][,.(minsupport = min(n), maxsupport = max(n), nknot = .N, ratio = calcratio(.SD)), by="quipu"][!is.na(quipu) & !duplicated(quipu)][ratio > Ratio*Ratio.lim & ratio < Ratio/Ratio.lim]
   
-  cat("\nAfter intensity check, found", nrow(Quipu), "credentialed knots.")
+  cat("\nAfter isotope ratio check, found", nrow(Quipu), "credentialed knots (quipus).")
   
   Quipu_stat = Quipu[,.(quipu,minsupport,maxsupport,nknot)]
   
@@ -106,7 +106,7 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio
 #' @param maxdimer numeric Maximumly allowed number of knots in each credentialed groups, The default value is 4.
 #' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.
 #' @param do.plot logical If set to TRUE, plot the credentialing scores of the knots
-#' @keywords credentialing, metabolomics
+#' @keywords credential credentialknots
 #' @import igraph magrittr stats matrixStats
 #' @seealso \code{\link{credentialknots}} \code{\link{findknots}}
 #' @return \code{Knot_quipu} data.table The new index of knot-to-quipu assignment after credentialing. 
