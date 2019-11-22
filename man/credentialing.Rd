@@ -6,6 +6,7 @@
 \usage{
 credentialing(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3, ratio1= 1/1, ratio2 = 1/2, 
 ratio_tol=0.1, ratio_ratio_tol = 0.2, cd=13.00335-12, charges= 1:4, mpc=c(12,120), maxnmer=4, 
+label1 = "1T1", label2 = "1T2",
 export = T, plot=F, projectName = "Credentialing",...)
 }
 \arguments{
@@ -34,6 +35,10 @@ export = T, plot=F, projectName = "Credentialing",...)
 \item{mpc}{numeric A vector of two values setting minimal and maximal theoretical mass per carbon to be considered. The default value is c(12,120).}
 
 \item{maxnmer}{numeric Maximum possible number of knots accepted in each credentialed groups, The default value is 4.}
+
+\item{label1}{character plotting legend of ratio1.}
+
+\item{label2}{character plotting legend of ratio2.}
 
 \item{export}{logical If TRUE, $credentialedgroups and $credentialedpeaks will be exported in CSV files.}
 

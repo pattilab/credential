@@ -4,13 +4,17 @@
 \alias{plotcredpeaks}
 \title{Plotting all credentialed peaks}
 \usage{
-plotcredpeaks(Credentialedindex, Credentialedpeaks,
-  filename = "credentialedpeaks.pdf", ...)
+plotcredpeaks(Credentialedindex, Credentialedpeaks, cred1 = "1T1", 
+cred2 = "1T2", filename = "credentialedpeaks.pdf", ...)
 }
 \arguments{
 \item{Credentialedindex}{data.table The index table of quipu-to-quipu assignment. A output table from \code{\link{credentialquipu}} or \code{\link{credentialing}}}
 
 \item{Credentialedpeaks}{data.table The peak table includes the aligned peaks of all credentialed groups. A output table from \code{\link{credential}}}
+
+\item{cred1}{character plotting legend of ratio1.}
+
+\item{cred2}{character plotting legend of ratio2.}
 
 \item{filename}{character the file name of the export pdf file Include .}
 

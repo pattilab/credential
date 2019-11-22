@@ -1,8 +1,8 @@
 Package: credential
 Type: Package
-Title: An bioinformatics tool for biologically-relavent feature extraction and untargeted metabolomics method optimization.
-Version: 3.1.4
-Date: 2019-08-28
+Title: An bioinformatics tool for biologically-relavent feature extraction and untargeted metabolomics method optimization
+Version: 3.1.5
+Date: 2019-11-21
 Author: Nathanial Guy Mahieu <nate@mahie.us>, Lingjue Wang<lingjue@wustl.edu>
 Maintainer: Lingjue Wang <lingjue@wustl.edu>
 Description: Credentialing searches for U12C-U13C feature pairs in labeled metabolomic data.

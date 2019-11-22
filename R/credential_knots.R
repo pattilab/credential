@@ -83,7 +83,8 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio
   Quipu_stat = Quipu[,.(quipu,minsupport,maxsupport,nknot)]
   
   Quipu = Knot[Knot_quipu[Quipu,,on="quipu"],,on="knot"]
-  Quipu = Quipu[,.(nknot = nknot, npeak = sum(n), rtmean = mean(rt), charge=z, basemz = min(basemz), mainmz1 = min(mainmz), mainmz2 = max(mainmz), int1 = min(maxi), int2 = max(maxi), ratio = ratio), by = "quipu"]
+  Quipu = Quipu[,.(nknot = nknot, npeak = sum(n), rtmean = mean(rt), charge=max(z), basemz = min(basemz), mainmz1 = min(mainmz), mainmz2 = max(mainmz), int1 = min(maxi), int2 = max(maxi), ratio = ratio), by = "quipu"]
+  Quipu = Quipu[,ncar:=round((mainmz2-mainmz1)*charge/cd)]
   Quipu = Quipu[!duplicated(Quipu$quipu)]
   
   return(list(knot_quipu = Knot_quipu[which(quipu %in% unique(Quipu$quipu))], quipu = Quipu, quipu_stat = Quipu_stat))

@@ -4,8 +4,7 @@
 \alias{plot.quipu}
 \title{Diagnostic Plotting Function for Quipu}
 \usage{
-plot.quipu(.quipu = NULL, quipus, knots, features, export = TRUE,
-  file = "quipu.pdf", ...)
+plot.quipu(.quipu=NULL, quipus, knots, features, export = TRUE, file = "quipu.pdf", ...)
 }
 \arguments{
 \item{.quipu}{numeric quipu index.}

@@ -31,7 +31,7 @@ plot.knots = function(.knot, knots, features, scales = c(1,1), ...) {
 #' Diagnostic Plotting Function for Quipu
 #'
 #' @description This function generate plots of quipu (credentialed knots).
-#' @usage plot.quipu(.quipu=NULL, quipus, knots, features, export = TRUE, file = "quipu.pdf", ...) {
+#' @usage plot.quipu(.quipu=NULL, quipus, knots, features, export = TRUE, file = "quipu.pdf", ...)
 #' @param .quipu numeric quipu index.
 #' @param knots list Knots. The output of \code{\link{findknots}}
 #' @param quipus list Quipus aka credentialed knots. The output of \code{\link{credentialknots}}
@@ -65,9 +65,12 @@ plot.quipu = function(.quipu=NULL, quipus, knots, features, export = TRUE, file 
 #' credentialed peak group in first ratio condition, the blue spectra (down) is the credentialed
 #' peak group in second ratio condition. The legend represent the quipu number corresponding to
 #' the matched credentialed groups in first and second conditions.
-#' @usage plotcredpeaks(Credentialedindex, Credentialedpeaks, filename = "credentialedpeaks.pdf", ...) {
+#' @usage plotcredpeaks(Credentialedindex, Credentialedpeaks, cred1 = "1T1", 
+#' cred2 = "1T2", filename = "credentialedpeaks.pdf", ...)
 #' @param Credentialedindex data.table The index table of quipu-to-quipu assignment. A output table from \code{\link{credentialquipu}} or \code{\link{credentialing}}
 #' @param Credentialedpeaks data.table The peak table includes the aligned peaks of all credentialed groups. A output table from \code{\link{credential}}
+#' @param cred1 character plotting legend of ratio1.
+#' @param cred2 character plotting legend of ratio2.
 #' @param filename character the file name of the export pdf file Include .
 #' @param ... Further arguments to be passed.
 #' @import data.table ggplot2 gridExtra grDevices
@@ -77,7 +80,7 @@ plot.quipu = function(.quipu=NULL, quipus, knots, features, export = TRUE, file 
 #' @export
 #'
 
-plotcredpeaks = function(Credentialedindex, Credentialedpeaks, filename = "credentialedpeaks.pdf", ...) {
+plotcredpeaks = function(Credentialedindex, Credentialedpeaks, cred1 = "1T1", cred2 = "1T2", filename = "credentialedpeaks.pdf", ...) {
 
   cat("\nPlotting",nrow(Credentialedindex),"credentialed peak groups...")
   index = Credentialedindex
@@ -90,22 +93,24 @@ plotcredpeaks = function(Credentialedindex, Credentialedpeaks, filename = "crede
   last = nrow(index)
   q1 = index$quipu1[i]
   q2 = index$quipu2[i]
-  peaks1 = peaks[quipu1==q1,.(quipu=quipu1,mz=mz1,rt=rt1, i=i1,ratio=ratio1)]
-  peaks2 = peaks[quipu2==q2,.(quipu=quipu2,mz=mz2,rt=rt2, i=-i2,ratio=ratio2)]
+  peaks1 = peaks[quipu1==q1,.(label = cred1,quipu=quipu1,mz=mz1,rt=rt1, charge = charge1, ncar = ncar1, i=i1,ratio=ratio1)]
+  peaks2 = peaks[quipu2==q2,.(label = cred2,quipu=quipu2,mz=mz2,rt=rt2, charge = charge2, ncar = ncar2, i=-i2,ratio=ratio2)]
   ratio_ratio = peaks1$ratio[1]/peaks2$ratio[1]
   peak = rbind(peaks1,peaks2)[,quipu:=as.factor(quipu)][]
-  
+  peak[charge==0,':='(charge="N/A",ncar="N/A")]
   title = paste("#",i,": basemz ",round(min(peak$mz),4),", rt ", round(mean(peak$rt),2),", ratio ", round(ratio_ratio,2),sep="")
-
-  plot <- ggplot(peak, aes(x=mz,y=i,color=quipu, label=mz)) + geom_bar(width = 0.04, stat="identity",fill="white")
+  subtitle = paste("charge:",peak$charge,"#carbon:", peak$ncar) # ncar calculation in credential_knots
+  plot <- ggplot(peak, aes(x=mz,y=i,fill=label, label=quipu)) + geom_bar(width = 0.04, stat="identity")
   grob <- ggplotGrob(plot)
   ax <- grob[["grobs"]][grob$layout$name == "axis-b"][[1]]
   plot <- plot + annotation_custom(grid::grobTree(ax, vp = grid::viewport(y=1, height=sum(ax$height))),
                          ymax=0, ymin=0) +
           geom_hline(aes(yintercept=0)) +
-          theme_classic() + labs(title=title) +
+          theme_classic() + labs(title=title, subtitle = subtitle) +
+          ylab("Intensity") + 
           theme(axis.text.x = element_blank(),
                 plot.title = element_text(hjust=0.5, size=10, face="bold"),
+                plot.subtitle = element_text(hjust=0.5, size=8),
                 axis.line.x = element_blank(),
                 axis.ticks.x=element_blank(),
                 panel.border = element_rect(colour = "black", fill=NA, size=1))
