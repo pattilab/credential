@@ -57,7 +57,7 @@ plot.quipu = function(.quipu=NULL, quipus, knots, features, export = TRUE, file 
   }
 }
 
-#' Plotting all credentialed peaks
+#' Step 4 of Credentialing: Plotting All Credentialed Peaks
 #'
 #' @description This function generates pseudo MS spectrum of all credentialed peak
 #' groups. Each plot includes two pseudo-MS spectrum with each centroid peak represent a

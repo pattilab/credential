@@ -1,4 +1,4 @@
-#' Step 4 of Credentialing: Find Matched Quipus between Two Credentialing Groups
+#' Step 3 of Credentialing: Find Matched Quipus between Two Credentialing Groups
 #'
 #' @description This function matches two set of quipus (credentialed knots) by their retention time cutoff, 
 #' head&tail m/z, charge state, peak intensities ratio. 

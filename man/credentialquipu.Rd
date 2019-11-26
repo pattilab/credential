@@ -2,7 +2,7 @@
 % Please edit documentation in R/credential_quipu.R
 \name{credentialquipu}
 \alias{credentialquipu}
-\title{Step 4 of Credentialing: Find Matched Quipus between Two Credentialing Groups}
+\title{Step 3 of Credentialing: Find Matched Quipus between Two Credentialing Groups}
 \usage{
 credentialquipu(credentialedknots1, credentialedknots2, ppm = 15, rtwin = 1, ratio_ratio = 2, 
 ratio_ratio_tol = 0.5, tailmatch=T)

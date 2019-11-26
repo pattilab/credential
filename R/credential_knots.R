@@ -1,4 +1,4 @@
-#' Step 3 of Credentialing: Find Isotope Knots and Resolve Charge State
+#' Step 2 of Credentialing: Find Isotope Knots and Resolve Charge State
 #'
 #' @description This function searches 'quipu' in knots. A quipu is a set of knots with same charge state and similar 
 #' retention time and m/z spacing. A credentialed quipu also qualifies for theoretical mass-per-cabon range and 

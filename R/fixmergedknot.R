@@ -1,4 +1,4 @@
-#' Step 2 of Credentialing: Split Merged knots with Multiple Isotopologue Patterns
+#' Step 1-2 of Credentialing: Split Merged knots with Multiple Isotopologue Patterns
 #'
 #' @description This function breaks knots with multiple isotopologue patterns for credentialing step 3. If certain
 #' descending and ascending pattern are found at the beginning (head) and ending (tail) region of the konts, the knot
@@ -10,9 +10,10 @@
 #' @return list A list with identical data sturcture as the input \code{Knot}.
 #' @keywords credential fixmergedknots
 #' @seealso \code{\link{findknots}} \code{\link{credentialing}}
-#' @export
 
 fixmergedknots = function(Knot, features) {
+  
+  cat("\nResolving merged knots...")
   
   merged = Knot$cc_knot[features,,on="cc", nomatch=0][,merged := checkmerged(.SD), by="knot"][,.(cc,merged)]
   Knot$cc_knot[merged,merged := merged,on="cc"]

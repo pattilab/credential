@@ -2,7 +2,7 @@
 % Please edit documentation in R/credential_knots.R
 \name{credentialknots}
 \alias{credentialknots}
-\title{Step 3 of Credentialing: Find Isotope Knots and Resolve Charge State}
+\title{Step 2 of Credentialing: Find Isotope Knots and Resolve Charge State}
 \usage{
 credentialknots(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio = 1/1, Ratio.lim = 0.1, 
 maxnmer = 4, cd = 13.00335-12, .zs = 1:4)

@@ -64,10 +64,8 @@ credentialing = function(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3,
 
   cat("\nCredentialing peaktable1...\n")
 
-  # find possibel isotope head and tails in different charge states
+  # find possible isotope head and tails at user-defined charge states
   knots1 = findknots(peaktable1, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
-  # Resolve merged knots
-  knots1 = fixmergedknots(knots1,peaktable1)
   # Heuristic search for knots that satisfying credentialing filters
   credentialedknots1 = credentialknots(knots1, ppmwid = ppm, rtwid = rtwin, mpc = mpc, Ratio = ratio1, Ratio.lim = ratio_tol, maxnmer = maxnmer, cd = cd, .zs = charges)
 
@@ -75,7 +73,6 @@ credentialing = function(peaktable1, peaktable2, ppm=15, rtwin=1, rtcom=3,
   
   #credentialing with ratio2 combination
   knots2 = findknots(peaktable2, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
-  knots2 = fixmergedknots(knots2,peaktable2)
   credentialedknots2 = credentialknots(knots2, ppmwid = ppm, rtwid = rtwin, mpc = mpc, Ratio = ratio2, Ratio.lim = ratio_tol, maxnmer = maxnmer, cd = cd, .zs = charges)
   
   # 2nd round filtering

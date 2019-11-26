@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotting.R
 \name{plotcredpeaks}
 \alias{plotcredpeaks}
-\title{Plotting all credentialed peaks}
+\title{Step 4 of Credentialing: Plotting All Credentialed Peaks}
 \usage{
 plotcredpeaks(Credentialedindex, Credentialedpeaks, cred1 = "1T1", 
 cred2 = "1T2", filename = "credentialedpeaks.pdf", ...)

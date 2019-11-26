@@ -84,10 +84,14 @@ findknots = function(features, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12) {
   
   names(c13)[2] = "knot"
   names(c13.)[1] = "knot"
+  Knot = list(cc_knot = c13, knot = c13.)
   
-  cat("\nFound", nrow(c13.), "isotope knots.")
+  # Resolve merged knots
+  Knot = fixmergedknots(Knot,features)
   
-  return(list(cc_knot = c13, knot = c13.))
+  cat("\nFound", nrow(Knot$knot), "isotope knots.")
+  
+  return(Knot)
 }
 
 #' Core function of findknots(): Searching knots at charge state z

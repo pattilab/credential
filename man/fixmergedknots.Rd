@@ -2,7 +2,7 @@
 % Please edit documentation in R/fixmergedknot.R
 \name{fixmergedknots}
 \alias{fixmergedknots}
-\title{Step 2 of Credentialing: Split Merged knots with Multiple Isotopologue Patterns}
+\title{Step 1-2 of Credentialing: Split Merged knots with Multiple Isotopologue Patterns}
 \usage{
 fixmergedknots(Knot, features)
 }
