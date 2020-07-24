@@ -29,4 +29,4 @@ BugReports: https://github.com/pattilab/credential/issues
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1

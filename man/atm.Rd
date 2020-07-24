@@ -4,7 +4,9 @@
 \name{atm}
 \alias{atm}
 \title{Monoisotopic masses of 24 commonly-seen elements}
-\format{A list with 24 numeric values:}
+\format{
+A list with 24 numeric values:
+}
 \source{
 \url{https://www.sisweb.com/referenc/source/exactmas.htm}
 }
