@@ -16,7 +16,7 @@
 #' @param cd numeric Unit mass difference between unlabeled and labeled atoms. Defalut is 13C-12C = 13.00335 - 12.
 #' @param .zs numeric Possible charge states of isotopologues. Default value is 1:4.
 #' @keywords credentialing credentialknots 
-#' @import data.table igraph magrittr stats matrixStats
+#' @import data.table igraph magrittr stats matrixStats reshape2
 #' @seealso \code{\link{findknots}} \code{\link{credentialing}}
 #' @return list A list of three tables "knot_quipu", "quipu" and "quipu_stat". \code{knot_quipu} data.table The index of quipu-to-knot 
 #' assignment. \code{quipu} data.table Aggregated information of all quipus: quipu#, nknot (number of knots), 
@@ -32,7 +32,7 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio
                            maxnmer = 4, cd = 13.00335-12, .zs = 1:4) {
   
   Knot = copy(Knots$knot)
-  cat("\nCredentialing within", length(unique(Knot$knot)), "supplied knots.")
+  cat("\nCredentialing", length(unique(Knot$knot)), "isotopic knots.")
   factor = 1
   do.plot = F
   maxdimer = maxnmer
@@ -47,14 +47,14 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio
   
   Knot[,rrtg := as.integer(factor(paste(do.call(paste, .SD)))), .SDcols = gcols]
   Knot[,(gcols) := NULL]
-  
+  cat("\n Found", length(unique(Knot$rrtg)), "knot groups to credential..")
   cat("\nWorking with supported charge states.")
   Knot_quipu = copy(Knot[,.(knot)])
   for (.rrtg in unique(Knot[z>0]$rrtg)) {
     knots = Knot[rrtg == .rrtg]
     credential(knots, Knot_quipu, ppmwid = ppmwid, rtwid = rtwid, factor = factor, mpc = mpc, ratio = Ratio, ratio.lim = Ratio.lim, maxdimer = maxdimer, cd = cd, do.plot = do.plot)
+    cat("\rWorking with supported charge states on knot group #", .rrtg, "out of",length(unique(Knot$rrtg)), "total groups. Found", length(unique(Knot_quipu$q)), "credentialed knots.")
   }
-  cat("\rWorking with supported charge states.", "Found", length(unique(Knot_quipu$q)), "credentialed knots.")
   lastn = length(unique(Knot_quipu$q))
   
   for (.z in unique(c(Knot$z, .zs))) {
@@ -64,13 +64,12 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio
     
     subknots = Knot[Knot_quipu[is.na(q)], , on="knot"][,gtemp := as.integer(clustgroup(cbind(meanr, rt), scales, factor))][z %in% c(0, .z)]
     for (.gtemp in unique(subknots$gtemp)) {
+      cat("\rWorking on knot group #", .gtemp, "out of", length(unique(subknots$gtemp)),"total groups. Found", length(unique(Knot_quipu$q)) - lastn, "credentialed knots.")
       knots = subknots[gtemp == .gtemp]
       knots[,meanr := meanmz %/% (cd/.z)]
       knots[1,z:=.z]
       credential(knots, Knot_quipu, ppmwid = ppmwid, rtwid = rtwid, factor = factor, mpc = mpc, ratio = Ratio, ratio.lim = Ratio.lim, maxdimer = maxdimer, cd = cd, do.plot = do.plot)
     }
-    
-    cat("\rWorking with unsupported charge state:", .z, "Found", length(unique(Knot_quipu$q)) - lastn, "credentialed knots.")
   }
   
   
@@ -83,7 +82,7 @@ credentialknots = function(Knots, ppmwid = 9, rtwid = 1, mpc = c(12, 120), Ratio
   Quipu_stat = Quipu[,.(quipu,minsupport,maxsupport,nknot)]
   
   Quipu = Knot[Knot_quipu[Quipu,,on="quipu"],,on="knot"]
-  Quipu = Quipu[,.(nknot = nknot, npeak = sum(n), rtmean = mean(rt), charge=max(z), basemz = min(basemz), mainmz1 = min(mainmz), mainmz2 = max(mainmz), int1 = min(maxi), int2 = max(maxi), ratio = ratio), by = "quipu"]
+  Quipu = Quipu[,.(nknot = nknot, npeak = sum(n), rtmean = mean(rt), charge=max(z), basemz = min(basemz), mainmz1 = min(mainmz), mainmz2 = max(mainmz), int1 = maxi[order(mainmz)[1]], int2 = maxi[order(mainmz,decreasing = T)[1]], ratio = ratio), by = "quipu"]
   Quipu = Quipu[,ncar:=round((mainmz2-mainmz1)*charge/cd)]
   Quipu = Quipu[!duplicated(Quipu$quipu)]
   

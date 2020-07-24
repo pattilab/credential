@@ -24,10 +24,10 @@ cbind.fill <- function(...){
     rbind(x, matrix(, n-nrow(x), ncol(x)))))
 }
 
-clustgroup = function(mat, scales, factor) {
+clustgroup = function(mat, scales, factor, method = "complete") {
   if (nrow(mat) < 2) return(rep(1, nrow(mat)))
   
-  cutree(hclust(dist(mat/rep(scales, each = nrow(mat))), method="single"), h = factor)
+  cutree(hclust(dist(mat/rep(scales, each = nrow(mat))), method= method), h = factor)
 }
 
 breakgroup = function(x, breaksize = 1) {

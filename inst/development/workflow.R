@@ -48,29 +48,26 @@ credential_test <- credential::credentialing(peaktable1 = feature1t1, peaktable2
   maxnmer = 4
   projectName = "credential_demo"
   
-  # step1 find isotope knots of each feature table
+  # step1 find isotope knots of each feature table (resolve merged isotope knots are performed in this step now)
   knots1 <- credential::findknots(features = feature1t1, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
   knots2 <- credential::findknots(features = feature1t2, .zs = charges, ppmwid = ppm, rtwid = rtwin, cd = cd)
   
-  # step2 resolve merged isotope knots
-  knots1 = fixmergedknots(knots1, feature1t1)
-  knots2 = fixmergedknots(knots2, feature1t2)
-  
-  # step3 credential knots from each feature table (quipus)
+  # step2 credential knots from each feature table (quipus)
   credentialedknots1 <- credential::credentialknots(Knots = knots1, ppmwid = ppm, rtwid = rtwin, Ratio = ratio1, Ratio.lim = ratio_tol)
   credentialedknots2 <- credential::credentialknots(Knots = knots2, ppmwid = ppm, rtwid = rtwin, Ratio = ratio2, Ratio.lim = ratio_tol)
   
-  # step4 match quipus (credentialed knots) to obtain credentialed groups
+  # step3 match quipus (credentialed knots) to obtain credentialed groups
   credentialedquipus <- credentialquipu(credentialedknots1, credentialedknots2, ppm = ppm, rtwin = rtcom, ratio_ratio = ratio1/ratio2, ratio_ratio_tol = ratio_ratio_tol, tailmatch=T)
   
-  # step5 plot credentialed peaks
+  # step4 plot credentialed peaks
     
     # merge credentialed peaks
     credpeak1 = feature1t1[knots1$cc_knot[credentialedknots1$knot_quipu[!is.na(quipu)],,on="knot"],,on="cc"][credentialedquipus$credentialedgroups[,.(quipu=quipu1,charge1,mainmz11,mainmz21,ratio1)],,on="quipu"]
-    credpeak1 = credpeak1[,.(cc1=cc,mz1=mz,rt1=rt,i1=i,knot1=knot,tail1=tail,quipu1=quipu,charge1,mainmz11,mainmz21,ratio1)]
+    credpeak1 = credpeak1[,.(cc1=cc,mz1=mz,rt1=rt,i1=i,knot1=knot,tail1=tail,quipu1=quipu,charge1,mainmz11,mainmz21,ncar1,ratio1)]
     credpeak2 = feature1t2[knots2$cc_knot[credentialedknots2$knot_quipu[!is.na(quipu)],,on="knot"],,on="cc"][credentialedquipus$credentialedgroups[,.(quipu=quipu2,charge2,mainmz12,mainmz22,ratio2,ratio1_ratio2)],,on="quipu"]
-    credpeak2 = credpeak2[,.(cc2=cc,mz2=mz,rt2=rt,i2=i,knot2=knot,tail2=tail,quipu2=quipu,charge2,mainmz12,mainmz22,ratio2,ratio1_ratio2)]
+    credpeak2 = credpeak2[,.(cc2=cc,mz2=mz,rt2=rt,i2=i,knot2=knot,tail2=tail,quipu2=quipu,charge2,mainmz12,mainmz22,ncar2,ratio2,ratio1_ratio2)]
     credentialedpeaks = do.call(rbind,apply(credentialedquipus$credentialedindex[order(credentialedquipus$credentialedgroups$basemz1)], MARGIN = 1, function(x){credential:::cbind.fill(credpeak1[quipu1==x[1]][order(mz1)],credpeak2[quipu2==x[2]][order(mz2)])}))
+    
     # plotting
     plotcredpeaks(Credentialedindex = credentialedquipus$credentialedindex, Credentialedpeaks = credentialedpeaks,
                   filename = paste(paste(projectName,nrow(credentialedquipus$credentialedindex),"credentialed_peak_groups",sep="_"),".pdf",sep=""))
