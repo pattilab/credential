@@ -1,19 +1,32 @@
 Package: credential
 Type: Package
-Title: Metabolomic artifact, noise, and contaminant removal.
-Version: 3.0
-Date: 2017-01-01
-Author: Nathaniel Guy Mahieu
-Maintainer: Nathaniel Guy Mahieu <nathaniel.mahieu@wustl.edu>
+Title: An bioinformatics tool for biologically-relavent feature extraction and untargeted metabolomics method optimization
+Version: 3.1.7
+Date: 2020-07-24
+Author: Nathanial Guy Mahieu <nate@mahie.us>, Lingjue Wang<lingjue@wustl.edu>
+Maintainer: Lingjue Wang <lingjue@wustl.edu>
 Description: Credentialing searches for U12C-U13C feature pairs in labeled metabolomic data.
-License: 
 Depends: 
-  R (>= 3.1.0),
-  igraph,
-  magrittr,
-  matrixStats
+    R (>= 3.5.0)
 Imports:
-  sn
+    igraph,
+    magrittr,
+    stats,
+    matrixStats,
+    gridExtra,
+    ggplot2,
+    grDevices,
+    utils,
+    data.table,
+    sn,
+    xcms,
+    reshape2
 Suggests:
-  ggplot2
-RoxygenNote: 6.0.0
+    rmarkdown,
+    readr
+URL: https://github.com/pattilab/credential
+BugReports: https://github.com/pattilab/credential/issues
+License: GPL-3 + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1

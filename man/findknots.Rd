@@ -2,29 +2,35 @@
 % Please edit documentation in R/find_knots.R
 \name{findknots}
 \alias{findknots}
-\title{Find knots and resolve charge state}
+\title{Step 1 of Credentialing: Find Isotopic Knots and Resolve Charge State}
 \usage{
-findknots(Cc.in, .zs = 1:4, ppmwid = 4, rtwid = 1, cd = 13.00335 - 12)
+findknots(features, .zs=1:4, ppmwid=4, rtwid = 1, cd = 13.00335-12)
 }
 \arguments{
-\item{.zs}{integer A vector containing the absolute value of the possible charges.}
+\item{features}{data.table A feature table including at least four exclusive columns: "cc", "mz", "rt" and "i". Each row is a feature (peak).}
 
-\item{ppmwid}{numeric The maximum mass error in ppm.}
+\item{.zs}{integer A vector indicating all possible charge states to be searched against.}
 
-\item{rtwid}{numeric The maximum retention time difference in seconds.}
+\item{ppmwid}{numeric Mass error tolerance in ppm.}
 
-\item{cd}{numeric The mass spacing to search for (defaults to C13 - C12)}
+\item{rtwid}{numeric The maximum retention time difference allowed in seconds.}
 
-\item{features}{data.frame Rows are features. Columns are "cc"}
-
-\item{minlength}{Integer. If an ROI is shorter than this it is discarded.}
+\item{cd}{numeric Unit mass difference between unlabeled and labeled atoms. Used for mass residual calculation. Defalut is 13C-12C = 13.00335 - 12.}
 }
 \value{
-list A list with values "cc_knot" and "knot".  \code{cc_knot} contains the features assignments to a knot. \code{knot} contains aggregate information about each knot.
+list A list with two tables "cc_knot" and "knot".  \code{cc_knot} data.table The index of feature-to-knot 
+assignment. \code{knot} data.table Aggregated information of all knots: knot#, meanr (mean mass residual), meanmz 
+(mean m/z), basemz (lowest mz peak), rt (mean rt), maxi (maximum intensity), n (number of peaks), z (charge state), 
+dir (relative of the knot from left to right, positive value for increasing, negative for decreasing).
 }
 \description{
-Find knots and resolve charge state
+This function searches for 'knot' from feature table based on retention time and mass residual analysis. 
+A knot is a set of isotopologue-like features with defined m/z and retention time difference and same charge states.
+Based on the fact that isotopologues have identical mass residual against \code{cd} = 13C-12C (1.00335), mass residual 
+analysis can be used to cluster isotopologues. Mass residual of a feature is calculated as: (mz %% cd).
 }
 \seealso{
-\link{\code{findzknots}}
+\code{\link{credentialing}}
 }
+\keyword{credential}
+\keyword{findknots}
